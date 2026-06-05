@@ -386,6 +386,64 @@ def get_pull_request_commits(repository_sync: GithubRepositorySync, pull_request
         return []
 
 
+def get_commit_issue_keys_by_sha(commits: list[dict]) -> dict[str, set[tuple[str, int]]]:
+    return {
+        get_github_commit_sha(commit): extract_issue_keys(get_github_commit_message(commit))
+        for commit in commits
+        if get_github_commit_sha(commit)
+    }
+
+
+def sync_pull_request_commits_to_issue(
+    *,
+    issue: Issue,
+    repository_sync: GithubRepositorySync,
+    pull_request_commits: list[dict],
+    commit_issue_keys_by_sha: dict[str, set[tuple[str, int]]],
+    pull_request_issue_keys: set[tuple[str, int]],
+    source: str,
+) -> int:
+    link_count = 0
+    issue_key = (repository_sync.project.identifier, issue.sequence_id)
+
+    for commit in pull_request_commits:
+        commit_sha = get_github_commit_sha(commit)
+        commit_issue_keys = commit_issue_keys_by_sha.get(commit_sha, set())
+
+        if issue_key not in pull_request_issue_keys and issue_key not in commit_issue_keys:
+            continue
+
+        if sync_github_commit_link(
+            issue=issue,
+            repository_sync=repository_sync,
+            commit=commit,
+            source=source,
+        ):
+            link_count += 1
+
+    return link_count
+
+
+def build_pull_request_link_metadata(
+    *,
+    repository_sync: GithubRepositorySync,
+    pull_request: dict,
+    sender: dict | None = None,
+) -> dict:
+    return {
+        "source": "github",
+        "type": "pull_request",
+        "github_actor": sender or {},
+        "github_assignees": pull_request.get("assignees") or [],
+        "repository_id": repository_sync.repository.repository_id,
+        "repository": f"{repository_sync.repository.owner}/{repository_sync.repository.name}",
+        "number": pull_request.get("number"),
+        "state": pull_request.get("state"),
+        "draft": pull_request.get("draft"),
+        "merged": pull_request.get("merged"),
+    }
+
+
 def sync_pull_request_webhook(payload: dict, action: str) -> int:
     pull_request = payload.get("pull_request") or {}
     head = pull_request.get("head") or {}
@@ -398,10 +456,7 @@ def sync_pull_request_webhook(payload: dict, action: str) -> int:
     link_count = 0
     for repository_sync in get_repository_syncs_for_github_payload(payload):
         pull_request_commits = get_pull_request_commits(repository_sync, pull_request)
-        commit_issue_keys_by_sha = {
-            get_github_commit_sha(commit): extract_issue_keys(get_github_commit_message(commit))
-            for commit in pull_request_commits
-        }
+        commit_issue_keys_by_sha = get_commit_issue_keys_by_sha(pull_request_commits)
         commit_issue_keys = set().union(*commit_issue_keys_by_sha.values()) if commit_issue_keys_by_sha else set()
         issue_keys = pull_request_issue_keys | commit_issue_keys
 
@@ -419,18 +474,11 @@ def sync_pull_request_webhook(payload: dict, action: str) -> int:
                 repository_sync=repository_sync,
                 title=f"GitHub PR #{pull_request.get('number')}: {pull_request.get('title')}",
                 url=pull_request.get("html_url"),
-                metadata={
-                    "source": "github",
-                    "type": "pull_request",
-                    "github_actor": payload.get("sender") or {},
-                    "github_assignees": pull_request.get("assignees") or [],
-                    "repository_id": repository_sync.repository.repository_id,
-                    "repository": f"{repository_sync.repository.owner}/{repository_sync.repository.name}",
-                    "number": pull_request.get("number"),
-                    "state": pull_request.get("state"),
-                    "draft": pull_request.get("draft"),
-                    "merged": pull_request.get("merged"),
-                },
+                metadata=build_pull_request_link_metadata(
+                    repository_sync=repository_sync,
+                    pull_request=pull_request,
+                    sender=payload.get("sender"),
+                ),
                 actor=actor,
             )
             if "assignees" in pull_request:
@@ -448,27 +496,85 @@ def sync_pull_request_webhook(payload: dict, action: str) -> int:
             )
             link_count += 1
 
-            issue_key = (repository_sync.project.identifier, issue.sequence_id)
-            for commit in pull_request_commits:
-                commit_sha = get_github_commit_sha(commit)
-                commit_issue_keys = commit_issue_keys_by_sha.get(commit_sha, set())
-
-                if issue_key not in pull_request_issue_keys and issue_key not in commit_issue_keys:
-                    continue
-
-                if sync_github_commit_link(
-                    issue=issue,
-                    repository_sync=repository_sync,
-                    commit=commit,
-                    source="pull_request",
-                ):
-                    link_count += 1
+            link_count += sync_pull_request_commits_to_issue(
+                issue=issue,
+                repository_sync=repository_sync,
+                pull_request_commits=pull_request_commits,
+                commit_issue_keys_by_sha=commit_issue_keys_by_sha,
+                pull_request_issue_keys=pull_request_issue_keys,
+                source="pull_request",
+            )
 
             if repository_sync.repository.config.get("status_automation", True):
                 if action in ["opened", "reopened", "ready_for_review"] and not pull_request.get("draft"):
                     move_issue_to_state_group(issue, StateGroup.STARTED.value)
                 elif action == "closed" and pull_request.get("merged"):
                     move_issue_to_state_group(issue, StateGroup.COMPLETED.value)
+
+    return link_count
+
+
+def backfill_existing_pull_request_commits(repository_sync: GithubRepositorySync) -> int:
+    pull_request_links = IssueLink.objects.filter(
+        workspace_id=repository_sync.workspace_id,
+        project_id=repository_sync.project_id,
+        metadata__source="github",
+        metadata__type="pull_request",
+        metadata__repository_id=repository_sync.repository.repository_id,
+    ).select_related("issue", "issue__project")
+    link_count = 0
+
+    for pull_request_link in pull_request_links:
+        metadata = pull_request_link.metadata or {}
+        pull_request_number = metadata.get("number")
+        if not pull_request_number:
+            continue
+
+        pull_request = {
+            **metadata,
+            "number": pull_request_number,
+            "html_url": pull_request_link.url,
+            "title": pull_request_link.title or f"GitHub PR #{pull_request_number}",
+        }
+        pull_request_commits = get_pull_request_commits(repository_sync, pull_request)
+        commit_issue_keys_by_sha = get_commit_issue_keys_by_sha(pull_request_commits)
+        commit_issue_keys = set().union(*commit_issue_keys_by_sha.values()) if commit_issue_keys_by_sha else set()
+        pull_request_issue_keys = {
+            (repository_sync.project.identifier, pull_request_link.issue.sequence_id),
+        }
+
+        link_count += sync_pull_request_commits_to_issue(
+            issue=pull_request_link.issue,
+            repository_sync=repository_sync,
+            pull_request_commits=pull_request_commits,
+            commit_issue_keys_by_sha=commit_issue_keys_by_sha,
+            pull_request_issue_keys=pull_request_issue_keys,
+            source="pull_request_backfill",
+        )
+
+        for issue in get_linkable_issues(repository_sync, commit_issue_keys).exclude(id=pull_request_link.issue_id):
+            sync_github_issue_link(
+                issue=issue,
+                repository_sync=repository_sync,
+                title=pull_request_link.title or f"GitHub PR #{pull_request_number}",
+                url=pull_request_link.url,
+                metadata={
+                    **build_pull_request_link_metadata(
+                        repository_sync=repository_sync,
+                        pull_request=pull_request,
+                    ),
+                    "backfilled": True,
+                },
+            )
+            link_count += 1
+            link_count += sync_pull_request_commits_to_issue(
+                issue=issue,
+                repository_sync=repository_sync,
+                pull_request_commits=pull_request_commits,
+                commit_issue_keys_by_sha=commit_issue_keys_by_sha,
+                pull_request_issue_keys=pull_request_issue_keys,
+                source="pull_request_backfill",
+            )
 
     return link_count
 
@@ -842,6 +948,11 @@ class GitHubRepositorySyncEndpoint(BaseAPIView):
             workspace_integration_id=workspace_integration_id,
             workspace_integration__integration__provider="github",
         ).select_related("repository")
+
+        if request.GET.get("backfill_pr_commits") in ["1", "true", "True"]:
+            for repository_sync in repository_syncs:
+                backfill_existing_pull_request_commits(repository_sync)
+
         serializer = GithubRepositorySyncSerializer(repository_syncs, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -894,6 +1005,7 @@ class GitHubRepositorySyncEndpoint(BaseAPIView):
                 },
             },
         )
+        backfill_existing_pull_request_commits(repository_sync)
         serializer = GithubRepositorySyncSerializer(repository_sync)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 

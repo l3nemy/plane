@@ -587,6 +587,131 @@ class TestGitHubIntegration:
         assert IssueLink.objects.filter(issue=first_issue).count() == 3
         assert IssueLink.objects.filter(issue=second_issue).count() == 2
 
+    def test_repository_sync_backfills_existing_pull_request_commits(
+        self,
+        db,
+        session_client,
+        create_user,
+        workspace,
+        monkeypatch,
+    ):
+        def list_pull_request_commits(**kwargs):
+            return [
+                {
+                    "sha": "aaa111",
+                    "html_url": "https://github.com/makeplane/plane/commit/aaa111",
+                    "commit": {
+                        "message": "prepare github sync",
+                    },
+                    "author": {
+                        "login": "jihyeok",
+                    },
+                },
+                {
+                    "sha": "bbb222",
+                    "html_url": "https://github.com/makeplane/plane/commit/bbb222",
+                    "commit": {
+                        "message": "connect TP-2 from existing PR commit",
+                    },
+                    "author": {
+                        "login": "jihyeok",
+                    },
+                },
+            ]
+
+        monkeypatch.setattr(
+            "plane.app.views.integration.github.list_github_pull_request_commits",
+            list_pull_request_commits,
+        )
+
+        integration = Integration.objects.create(provider="github", title="GitHub")
+        workspace_integration = create_or_update_github_workspace_integration(
+            workspace=workspace,
+            integration=integration,
+            installation_id=12345,
+            installation={"account": {"login": "makeplane"}},
+        )
+        project = Project.objects.create(name="Test Project", identifier="TP", workspace=workspace)
+        ProjectMember.objects.create(project=project, workspace=workspace, member=create_user, role=20)
+        state = State.objects.create(
+            name="Todo",
+            group=StateGroup.UNSTARTED.value,
+            project=project,
+            workspace=workspace,
+            color="#60646C",
+            sequence=25000,
+            default=True,
+        )
+        first_issue = Issue.objects.create(
+            name="Issue with existing PR link",
+            project=project,
+            workspace=workspace,
+            state=state,
+        )
+        second_issue = Issue.objects.create(
+            name="Issue referenced by PR commit",
+            project=project,
+            workspace=workspace,
+            state=state,
+        )
+        repository = GithubRepository.objects.create(
+            name="plane",
+            owner="makeplane",
+            repository_id=100,
+            url="https://github.com/makeplane/plane",
+            project=project,
+            workspace=workspace,
+        )
+        GithubRepositorySync.objects.create(
+            repository=repository,
+            actor=workspace_integration.actor,
+            workspace_integration=workspace_integration,
+            credentials={"installation_id": 12345},
+            project=project,
+            workspace=workspace,
+        )
+        IssueLink.objects.create(
+            issue=first_issue,
+            title="GitHub PR #7: TP-1 improve GitHub sync",
+            url="https://github.com/makeplane/plane/pull/7",
+            metadata={
+                "source": "github",
+                "type": "pull_request",
+                "repository_id": 100,
+                "repository": "makeplane/plane",
+                "number": 7,
+            },
+            project=project,
+            workspace=workspace,
+            created_by=workspace_integration.actor,
+        )
+
+        response = session_client.get(
+            f"/api/workspaces/{workspace.slug}/projects/{project.id}/workspace-integrations/"
+            f"{workspace_integration.id}/github-repository-sync/?backfill_pr_commits=true"
+        )
+
+        assert response.status_code == 200
+        assert IssueLink.objects.filter(
+            issue=first_issue,
+            metadata__type="commit",
+        ).count() == 2
+        assert IssueLink.objects.filter(
+            issue=second_issue,
+            metadata__type="pull_request",
+            metadata__number=7,
+        ).exists()
+        assert IssueLink.objects.filter(
+            issue=second_issue,
+            metadata__type="commit",
+            metadata__sha="bbb222",
+        ).count() == 1
+        assert not IssueLink.objects.filter(
+            issue=second_issue,
+            metadata__type="commit",
+            metadata__sha="aaa111",
+        ).exists()
+
     def test_install_callback_requires_workspace_admin(self, db, api_client, workspace):
         user = User.objects.create(
             email="non-admin@plane.so",
