@@ -5,11 +5,15 @@
  */
 
 import React from "react";
-import type { TIssueServiceType } from "@plane/types";
+import type { TIssueLink, TIssueServiceType } from "@plane/types";
 // components
 import { LinkList } from "../../issue-detail/links";
 // helper
 import { useLinkOperations } from "./helper";
+// hooks
+import { useIssueDetail } from "@/hooks/store/use-issue-detail";
+// local imports
+import { GitHubDevelopmentLinks, isGitHubDevelopmentLink } from "./github-development";
 
 type Props = {
   workspaceSlug: string;
@@ -21,16 +25,29 @@ type Props = {
 
 export function IssueLinksCollapsibleContent(props: Props) {
   const { workspaceSlug, projectId, issueId, disabled, issueServiceType } = props;
+  // store hooks
+  const {
+    link: { getLinkById, getLinksByIssueId },
+  } = useIssueDetail(issueServiceType);
 
   // helper
   const handleLinkOperations = useLinkOperations(workspaceSlug, projectId, issueId, issueServiceType);
+  // derived values
+  const links = (getLinksByIssueId(issueId) ?? [])
+    .map((linkId) => getLinkById(linkId))
+    .filter((link): link is TIssueLink => !!link);
+  const githubLinkIds = links.filter(isGitHubDevelopmentLink).map((link) => link.id);
 
   return (
-    <LinkList
-      issueId={issueId}
-      linkOperations={handleLinkOperations}
-      disabled={disabled}
-      issueServiceType={issueServiceType}
-    />
+    <>
+      <GitHubDevelopmentLinks links={links} />
+      <LinkList
+        issueId={issueId}
+        linkOperations={handleLinkOperations}
+        disabled={disabled}
+        hiddenLinkIds={githubLinkIds}
+        issueServiceType={issueServiceType}
+      />
+    </>
   );
 }

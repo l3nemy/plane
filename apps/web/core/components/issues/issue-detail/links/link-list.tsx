@@ -19,12 +19,13 @@ type TLinkList = {
   issueId: string;
   linkOperations: TLinkOperationsModal;
   disabled?: boolean;
+  hiddenLinkIds?: string[];
   issueServiceType: TIssueServiceType;
 };
 
 export const LinkList = observer(function LinkList(props: TLinkList) {
   // props
-  const { issueId, linkOperations, disabled = false, issueServiceType } = props;
+  const { issueId, linkOperations, disabled = false, hiddenLinkIds = [], issueServiceType } = props;
   // hooks
   const {
     link: { getLinksByIssueId },
@@ -34,9 +35,13 @@ export const LinkList = observer(function LinkList(props: TLinkList) {
 
   if (!issueLinks) return null;
 
+  const visibleIssueLinks = issueLinks.filter((linkId) => !hiddenLinkIds.includes(linkId));
+
+  if (visibleIssueLinks.length === 0) return null;
+
   return (
     <div className="flex flex-col gap-2 pt-4">
-      {issueLinks.map((linkId) => (
+      {visibleIssueLinks.map((linkId) => (
         <IssueLinkItem
           key={linkId}
           linkId={linkId}
