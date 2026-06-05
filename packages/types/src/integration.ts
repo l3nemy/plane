@@ -79,7 +79,6 @@ interface ISlackIntegrationData {
   };
   scope: string;
   app_id: string;
-  enterprise: any;
   token_type: string;
   authed_user: string;
   bot_user_id: string;
@@ -90,7 +89,6 @@ interface ISlackIntegrationData {
     channel_id: string;
     configuration_url: string;
   };
-  is_enterprise_install: boolean;
 }
 
 export type {
