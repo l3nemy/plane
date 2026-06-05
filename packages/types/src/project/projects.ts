@@ -137,6 +137,8 @@ export interface IGithubRepository {
   id: string;
   full_name: string;
   html_url: string;
+  name?: string;
+  owner?: string | { login?: string };
   url: string;
 }
 

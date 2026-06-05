@@ -7,15 +7,14 @@
 import { useParams } from "next/navigation";
 import useSWR, { mutate } from "swr";
 import { TOAST_TYPE, setToast } from "@plane/propel/toast";
-import type { IWorkspaceIntegration } from "@plane/types";
-// assets
-import GithubLogo from "@/app/assets/logos/github-square.png?url";
-import SlackLogo from "@/app/assets/services/slack.png?url";
+import type { IGithubRepository, IWorkspaceIntegration } from "@plane/types";
 // components
 import { SelectChannel } from "@/components/integration/slack/select-channel";
 import { SelectRepository } from "@/components/integration/github/select-repository";
 // constants
 import { PROJECT_GITHUB_REPOSITORY } from "@/constants/fetch-keys";
+// lib
+import { getIntegrationMetadata } from "@/lib/integrations/metadata";
 // services
 import { ProjectService } from "@/services/project";
 
@@ -23,45 +22,44 @@ type Props = {
   integration: IWorkspaceIntegration;
 };
 
-const integrationDetails: { [key: string]: any } = {
-  github: {
-    logo: GithubLogo,
-    description: "Select GitHub repository to enable sync.",
-  },
-  slack: {
-    logo: SlackLogo,
-    description: "Get regular updates and control which notification you want to receive.",
-  },
-};
-
 // services
 const projectService = new ProjectService();
 
 export function IntegrationCard({ integration }: Props) {
   const { workspaceSlug, projectId } = useParams();
+  const provider = integration.integration_detail.provider;
+  const metadata = getIntegrationMetadata(integration.integration_detail);
 
-  const { data: syncedGithubRepository } = useSWR(projectId ? PROJECT_GITHUB_REPOSITORY(projectId) : null, () =>
-    workspaceSlug && projectId && integration
-      ? projectService.getProjectGithubRepository(workspaceSlug, projectId, integration.id)
-      : null
+  const { data: syncedGithubRepository } = useSWR(
+    provider === "github" && projectId ? PROJECT_GITHUB_REPOSITORY(projectId) : null,
+    () =>
+      workspaceSlug && projectId && integration && provider === "github"
+        ? projectService.getProjectGithubRepository(workspaceSlug, projectId, integration.id)
+        : null
   );
 
-  const handleChange = (repo: any) => {
-    if (!workspaceSlug || !projectId || !integration) return;
+  const handleChange = (repo?: IGithubRepository | null) => {
+    if (!workspaceSlug || !projectId || !integration || !repo) return;
 
-    const {
-      html_url,
-      owner: { login },
-      id,
-      name,
-    } = repo;
+    const owner = typeof repo.owner === "string" ? repo.owner : repo.owner?.login;
+    const repositoryName = repo.name ?? repo.full_name?.split("/").pop();
+    const repositoryUrl = repo.html_url ?? repo.url;
+
+    if (!repo.id || !repositoryName || !owner || !repositoryUrl) {
+      setToast({
+        type: TOAST_TYPE.ERROR,
+        title: "Error!",
+        message: "Repository details are incomplete. Please refresh and try again.",
+      });
+      return;
+    }
 
     projectService
       .syncGithubRepository(workspaceSlug, projectId, integration.id, {
-        name,
-        owner: login,
-        repository_id: id,
-        url: html_url,
+        name: repositoryName,
+        owner,
+        repository_id: repo.id,
+        url: repositoryUrl,
       })
       .then(() => {
         mutate(PROJECT_GITHUB_REPOSITORY(projectId));
@@ -69,8 +67,9 @@ export function IntegrationCard({ integration }: Props) {
         setToast({
           type: TOAST_TYPE.SUCCESS,
           title: "Success!",
-          message: `${login}/${name} repository synced with the project successfully.`,
+          message: `${owner}/${repositoryName} repository synced with the project successfully.`,
         });
+        return null;
       })
       .catch((err) => {
         console.error(err);
@@ -88,20 +87,24 @@ export function IntegrationCard({ integration }: Props) {
         <div className="flex items-center justify-between gap-2 border-b border-subtle bg-surface-1 px-4 py-6">
           <div className="flex items-start gap-4">
             <div className="h-10 w-10 flex-shrink-0">
-              <img
-                src={integrationDetails[integration.integration_detail.provider].logo}
-                className="h-full w-full object-cover"
-                alt={`${integration.integration_detail.title} Logo`}
-              />
+              {metadata.projectLogo ? (
+                <img
+                  src={metadata.projectLogo}
+                  className="h-full w-full object-cover"
+                  alt={`${integration.integration_detail.title} Logo`}
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center rounded bg-surface-2 text-body-xs-medium text-secondary uppercase">
+                  {integration.integration_detail.title.slice(0, 1)}
+                </div>
+              )}
             </div>
             <div>
               <h3 className="flex items-center gap-4 text-13 font-medium">{integration.integration_detail.title}</h3>
-              <p className="text-13 tracking-tight text-secondary">
-                {integrationDetails[integration.integration_detail.provider].description}
-              </p>
+              <p className="text-13 tracking-tight text-secondary">{metadata.projectDescription}</p>
             </div>
           </div>
-          {integration.integration_detail.provider === "github" && (
+          {provider === "github" && (
             <SelectRepository
               integration={integration}
               value={
@@ -117,7 +120,7 @@ export function IntegrationCard({ integration }: Props) {
               onChange={handleChange}
             />
           )}
-          {integration.integration_detail.provider === "slack" && <SelectChannel integration={integration} />}
+          {provider === "slack" && <SelectChannel integration={integration} />}
         </div>
       )}
     </>

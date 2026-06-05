@@ -16,9 +16,6 @@ import { Tooltip } from "@plane/propel/tooltip";
 import type { IAppIntegration, IWorkspaceIntegration } from "@plane/types";
 // ui
 import { Loader } from "@plane/ui";
-// assets
-import GithubLogo from "@/app/assets/services/github.png?url";
-import SlackLogo from "@/app/assets/services/slack.png?url";
 // constants
 import { WORKSPACE_INTEGRATIONS } from "@/constants/fetch-keys";
 // hooks
@@ -26,24 +23,13 @@ import { useInstance } from "@/hooks/store/use-instance";
 import { useUserPermissions } from "@/hooks/store/user";
 import useIntegrationPopup from "@/hooks/use-integration-popup";
 import { usePlatformOS } from "@/hooks/use-platform-os";
+// lib
+import { getIntegrationMetadata } from "@/lib/integrations/metadata";
 // services
 import { IntegrationService } from "@/services/integrations";
 
 type Props = {
   integration: IAppIntegration;
-};
-
-const integrationDetails: { [key: string]: any } = {
-  github: {
-    logo: GithubLogo,
-    installed: "Activate GitHub on individual projects to sync with specific repositories.",
-    notInstalled: "Connect with GitHub with your Plane workspace to sync project work items.",
-  },
-  slack: {
-    logo: SlackLogo,
-    installed: "Activate Slack on individual projects to sync with specific channels.",
-    notInstalled: "Connect with Slack with your Plane workspace to sync project work items.",
-  },
 };
 
 // services
@@ -57,13 +43,27 @@ export const SingleIntegrationCard = observer(function SingleIntegrationCard({ i
   // store hooks
   const { config } = useInstance();
   const { allowPermissions } = useUserPermissions();
+  const metadata = getIntegrationMetadata(integration);
+  const isKnownPopupProvider = metadata.authProvider === "github" || metadata.authProvider === "slack";
+  const canInstall = Boolean(metadata.installUrl || isKnownPopupProvider);
 
   const isUserAdmin = allowPermissions([EUserPermissions.ADMIN], EUserPermissionsLevel.WORKSPACE);
   const { isMobile } = usePlatformOS();
   const { startAuth, isConnecting: isInstalling } = useIntegrationPopup({
-    provider: integration.provider,
+    provider: metadata.authProvider,
     github_app_name: config?.github_app_name || "",
     slack_client_id: config?.slack_client_id || "",
+    authUrl: metadata.installUrl,
+    onBeforeOpen: async () => {
+      if (!workspaceSlug || integration.provider !== "github") return;
+
+      await integrationService.installWorkspaceIntegration(workspaceSlug.toString(), "github");
+    },
+    onComplete: () => {
+      if (!workspaceSlug) return;
+
+      void mutate(WORKSPACE_INTEGRATIONS(workspaceSlug.toString()));
+    },
   });
 
   const { data: workspaceIntegrations } = useSWR(workspaceSlug ? WORKSPACE_INTEGRATIONS(workspaceSlug) : null, () =>
@@ -92,6 +92,7 @@ export const SingleIntegrationCard = observer(function SingleIntegrationCard({ i
           title: "Deleted successfully!",
           message: `${integration.title} integration deleted successfully.`,
         });
+        return null;
       })
       .catch(() => {
         setDeletingIntegration(false);
@@ -104,17 +105,28 @@ export const SingleIntegrationCard = observer(function SingleIntegrationCard({ i
       });
   };
 
-  const isInstalled = workspaceIntegrations?.find((i: any) => i.integration_detail.id === integration.id);
+  const isInstalled = workspaceIntegrations?.find((i: IWorkspaceIntegration) => {
+    if (i.integration_detail.id !== integration.id) return false;
+
+    if (integration.provider !== "github") return true;
+
+    const integrationMetadata = i.metadata as Record<string, unknown> | undefined;
+    const integrationConfig = i.config as Record<string, unknown> | undefined;
+
+    return Boolean(integrationMetadata?.installation_id || integrationConfig?.installation_id);
+  });
 
   return (
     <div className="flex items-center justify-between gap-2 border-b border-subtle bg-surface-1 px-4 py-6">
       <div className="flex items-start gap-4">
         <div className="h-10 w-10 flex-shrink-0">
-          <img
-            src={integrationDetails[integration.provider].logo}
-            className="h-full w-full object-cover"
-            alt={`${integration.title} Logo`}
-          />
+          {metadata.logo ? (
+            <img src={metadata.logo} className="h-full w-full object-cover" alt={`${integration.title} Logo`} />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center rounded bg-surface-2 text-body-xs-medium text-secondary uppercase">
+              {integration.title.slice(0, 1)}
+            </div>
+          )}
         </div>
         <div>
           <h3 className="flex items-center gap-2 text-body-xs-medium">
@@ -126,8 +138,8 @@ export const SingleIntegrationCard = observer(function SingleIntegrationCard({ i
           <p className="text-body-xs-regular text-secondary">
             {workspaceIntegrations
               ? isInstalled
-                ? integrationDetails[integration.provider].installed
-                : integrationDetails[integration.provider].notInstalled
+                ? metadata.installedDescription
+                : metadata.notInstalledDescription
               : "Loading..."}
           </p>
         </div>
@@ -156,19 +168,26 @@ export const SingleIntegrationCard = observer(function SingleIntegrationCard({ i
         ) : (
           <Tooltip
             isMobile={isMobile}
-            disabled={isUserAdmin}
-            tooltipContent={!isUserAdmin ? "You don't have permission to perform this" : null}
+            disabled={isUserAdmin && canInstall}
+            tooltipContent={
+              !isUserAdmin
+                ? "You don't have permission to perform this"
+                : !canInstall
+                  ? "This integration does not provide an install URL yet."
+                  : null
+            }
           >
             <Button
-              className={`${!isUserAdmin ? "hover:cursor-not-allowed" : ""}`}
+              className={`${!isUserAdmin || !canInstall ? "hover:cursor-not-allowed" : ""}`}
               variant="primary"
               onClick={() => {
-                if (!isUserAdmin) return;
+                if (!isUserAdmin || !canInstall) return;
                 startAuth();
               }}
-              loading={isInstalling}
+              disabled={!isUserAdmin || !canInstall}
+              loading={isInstalling && canInstall}
             >
-              {isInstalling ? "Installing..." : "Install"}
+              {canInstall ? (isInstalling ? "Installing..." : "Install") : "Manual setup"}
             </Button>
           </Tooltip>
         )

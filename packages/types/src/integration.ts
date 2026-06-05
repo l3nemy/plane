@@ -5,14 +5,27 @@
  */
 
 // All the app integrations that are available
-export interface IAppIntegration {
+interface IAppIntegrationMetadata {
+  auth_provider?: string;
+  community?: boolean;
+  install_handler?: string;
+  install_url?: string | null;
+  installed_description?: string;
+  not_installed_description?: string;
+  project_description?: string;
+  project_logo_url?: string | null;
+  supports_project_sync?: boolean;
+  [key: string]: unknown;
+}
+
+interface IAppIntegration {
   author: string;
   avatar_url: string | null;
   created_at: string;
   created_by: string | null;
   description: any;
   id: string;
-  metadata: any;
+  metadata: IAppIntegrationMetadata;
   network: number;
   provider: string;
   redirect_url: string;
@@ -24,7 +37,7 @@ export interface IAppIntegration {
   webhook_url: string;
 }
 
-export interface IWorkspaceIntegration {
+interface IWorkspaceIntegration {
   actor: string;
   api_token: string;
   config: any;
@@ -40,7 +53,7 @@ export interface IWorkspaceIntegration {
 }
 
 // slack integration
-export interface ISlackIntegration {
+interface ISlackIntegration {
   id: string;
   created_at: string;
   updated_at: string;
@@ -58,7 +71,7 @@ export interface ISlackIntegration {
   workspace_integration: string;
 }
 
-export interface ISlackIntegrationData {
+interface ISlackIntegrationData {
   ok: boolean;
   team: {
     id: string;
@@ -79,3 +92,11 @@ export interface ISlackIntegrationData {
   };
   is_enterprise_install: boolean;
 }
+
+export type {
+  IAppIntegration,
+  IAppIntegrationMetadata,
+  ISlackIntegration,
+  ISlackIntegrationData,
+  IWorkspaceIntegration,
+};

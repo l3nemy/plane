@@ -12,11 +12,17 @@ const useIntegrationPopup = ({
   stateParams,
   github_app_name,
   slack_client_id,
+  authUrl,
+  onBeforeOpen,
+  onComplete,
 }: {
   provider: string | undefined;
   stateParams?: string;
   github_app_name?: string;
   slack_client_id?: string;
+  authUrl?: string | null;
+  onBeforeOpen?: () => void | Promise<void>;
+  onComplete?: () => void | Promise<void>;
 }) => {
   const [authLoader, setAuthLoader] = useState(false);
 
@@ -30,13 +36,48 @@ const useIntegrationPopup = ({
     }`,
   };
 
+  const formatAuthUrl = (url: string) =>
+    url
+      .replaceAll("{workspaceSlug}", encodeURIComponent(workspaceSlug?.toString() ?? ""))
+      .replaceAll("{projectId}", encodeURIComponent(projectId?.toString() ?? ""))
+      .replaceAll("{stateParams}", encodeURIComponent(stateParams ?? ""));
+
   const popup = useRef<any>();
+  const authCompleted = useRef(false);
+  const messageListener = useRef<((event: MessageEvent) => void) | null>(null);
+
+  const removeMessageListener = () => {
+    if (!messageListener.current) return;
+
+    window.removeEventListener("message", messageListener.current);
+    messageListener.current = null;
+  };
+
+  const completeAuth = () => {
+    if (authCompleted.current) return;
+
+    authCompleted.current = true;
+    setAuthLoader(false);
+    removeMessageListener();
+    void onComplete?.();
+  };
+
+  const listenForAuthMessage = () => {
+    removeMessageListener();
+
+    messageListener.current = (event: MessageEvent) => {
+      if (event.data?.type !== "plane:integration:github") return;
+
+      completeAuth();
+    };
+    window.addEventListener("message", messageListener.current);
+  };
 
   const checkPopup = () => {
     const check = setInterval(() => {
       if (!popup || popup.current.closed || popup.current.closed === undefined) {
         clearInterval(check);
-        setAuthLoader(false);
+        completeAuth();
       }
     }, 1000);
   };
@@ -48,13 +89,23 @@ const useIntegrationPopup = ({
       height = 600;
     const left = window.innerWidth / 2 - width / 2;
     const top = window.innerHeight / 2 - height / 2;
-    const url = providerUrls[provider];
+    const url = authUrl ? formatAuthUrl(authUrl) : providerUrls[provider];
+
+    if (!url) return;
 
     return window.open(url, "", `width=${width}, height=${height}, top=${top}, left=${left}`);
   };
 
-  const startAuth = () => {
+  const startAuth = async () => {
+    authCompleted.current = false;
+    await onBeforeOpen?.();
+    listenForAuthMessage();
     popup.current = openPopup();
+    if (!popup.current) {
+      removeMessageListener();
+      return;
+    }
+
     checkPopup();
     setAuthLoader(true);
   };

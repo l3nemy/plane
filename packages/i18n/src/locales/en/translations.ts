@@ -1411,6 +1411,31 @@ export default {
     },
     security: {
       heading: "Security",
+      github_account: {
+        heading: "Connected accounts",
+        description: "Connect your GitHub identity so GitHub assignees and actors resolve to your Plane user.",
+        connect: "Connect GitHub",
+        reconnect: "Reconnect",
+        view_profile: "View profile",
+        not_connected: "No GitHub account connected",
+        oauth_disabled: "GitHub OAuth is not enabled for this instance. Use manual mapping for local development.",
+        manual: {
+          show: "Connect manually",
+          hide: "Hide manual connection",
+          placeholder: "GitHub username",
+          save: "Save mapping",
+        },
+        toast: {
+          connected: {
+            title: "GitHub account connected",
+            message: "GitHub activity can now map back to your Plane user.",
+          },
+          error: {
+            title: "GitHub account could not be connected",
+            message: "Check the username and try again.",
+          },
+        },
+      },
     },
     api_tokens: {
       heading: "Personal Access Tokens",
@@ -1521,6 +1546,9 @@ export default {
             },
           },
         },
+      },
+      integrations: {
+        title: "Integrations",
       },
       webhooks: {
         heading: "Webhooks",
@@ -1819,6 +1847,12 @@ export default {
           hours: "Hours",
         },
       },
+    },
+    integrations: {
+      label: "Integrations",
+      heading: "Integrations",
+      description: "Connect this project to installed workspace integrations.",
+      empty_state: "No workspace integrations are installed for project sync yet.",
     },
     automations: {
       label: "Automations",

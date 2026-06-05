@@ -31,6 +31,14 @@ export class IntegrationService extends APIService {
       });
   }
 
+  async installWorkspaceIntegration(workspaceSlug: string, provider: string, data: Record<string, unknown> = {}) {
+    return this.post(`/api/workspaces/${workspaceSlug}/workspace-integrations/${provider}/`, data)
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
   async deleteWorkspaceIntegration(workspaceSlug: string, integrationId: string): Promise<any> {
     return this.delete(`/api/workspaces/${workspaceSlug}/workspace-integrations/${integrationId}/provider/`)
       .then((res) => res?.data)

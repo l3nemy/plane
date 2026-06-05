@@ -84,6 +84,27 @@ export class UserService extends APIService {
       });
   }
 
+  async getCurrentUserGitHubAccount(): Promise<any> {
+    return this.get("/api/users/me/accounts/github/")
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response;
+      });
+  }
+
+  async connectCurrentUserGitHubAccount(data: {
+    avatar_url?: string;
+    github_id: number | string;
+    html_url?: string;
+    login: string;
+  }): Promise<any> {
+    return this.post("/api/users/me/accounts/github/", data)
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response?.data;
+      });
+  }
+
   async currentUserInstanceAdminStatus(): Promise<IInstanceAdminStatus> {
     return this.get("/api/users/me/instance-admin/")
       .then((response) => response?.data)
