@@ -267,12 +267,21 @@ def sync_github_commit_link(
     repository_sync: GithubRepositorySync,
     commit: dict,
     source: str,
+    pull_request: dict | None = None,
 ) -> IssueLink | None:
     commit_url = get_github_commit_url(commit)
     commit_sha = get_github_commit_sha(commit)
 
     if not commit_url or not commit_sha:
         return None
+
+    pull_request_metadata = {}
+    if pull_request:
+        pull_request_metadata = {
+            "pull_request_number": pull_request.get("number"),
+            "pull_request_title": pull_request.get("title"),
+            "pull_request_url": pull_request.get("html_url"),
+        }
 
     return sync_github_issue_link(
         issue=issue,
@@ -291,6 +300,7 @@ def sync_github_commit_link(
             "author_login": get_github_commit_author(commit).get("login")
             or get_github_commit_author(commit).get("username"),
             "committed_at": get_github_commit_committed_at(commit),
+            **pull_request_metadata,
         },
     )
 
@@ -414,6 +424,7 @@ def sync_pull_request_commits_to_issue(
     *,
     issue: Issue,
     repository_sync: GithubRepositorySync,
+    pull_request: dict,
     pull_request_commits: list[dict],
     commit_issue_keys_by_sha: dict[str, set[tuple[str, int]]],
     pull_request_issue_keys: set[tuple[str, int]],
@@ -434,6 +445,7 @@ def sync_pull_request_commits_to_issue(
             repository_sync=repository_sync,
             commit=commit,
             source=source,
+            pull_request=pull_request,
         ):
             link_count += 1
 
@@ -515,6 +527,7 @@ def sync_pull_request_webhook(payload: dict, action: str) -> int:
             link_count += sync_pull_request_commits_to_issue(
                 issue=issue,
                 repository_sync=repository_sync,
+                pull_request=pull_request,
                 pull_request_commits=pull_request_commits,
                 commit_issue_keys_by_sha=commit_issue_keys_by_sha,
                 pull_request_issue_keys=pull_request_issue_keys,
@@ -580,6 +593,7 @@ def backfill_existing_pull_request_commits(
         link_count += sync_pull_request_commits_to_issue(
             issue=pull_request_link.issue,
             repository_sync=repository_sync,
+            pull_request=pull_request,
             pull_request_commits=pull_request_commits,
             commit_issue_keys_by_sha=commit_issue_keys_by_sha,
             pull_request_issue_keys=pull_request_issue_keys,
@@ -604,6 +618,7 @@ def backfill_existing_pull_request_commits(
             link_count += sync_pull_request_commits_to_issue(
                 issue=issue,
                 repository_sync=repository_sync,
+                pull_request=pull_request,
                 pull_request_commits=pull_request_commits,
                 commit_issue_keys_by_sha=commit_issue_keys_by_sha,
                 pull_request_issue_keys=pull_request_issue_keys,

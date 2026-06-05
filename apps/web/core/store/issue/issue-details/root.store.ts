@@ -259,8 +259,8 @@ export abstract class IssueDetail implements IIssueDetail {
     this.openWidgets = state;
     if (this.lastWidgetAction) this.lastWidgetAction = null;
   };
-  setLastWidgetAction = (action: TWorkItemWidgets) => {
-    this.openWidgets = [action];
+  setLastWidgetAction = (widget: TWorkItemWidgets) => {
+    this.openWidgets = [widget];
   };
   toggleOpenWidget = (state: TWorkItemWidgets) => {
     if (this.openWidgets && this.openWidgets.includes(state))
@@ -322,6 +322,8 @@ export abstract class IssueDetail implements IIssueDetail {
 
   // link
   addLinks = (issueId: string, links: TIssueLink[]) => this.link.addLinks(issueId, links);
+  fetchDevelopmentLinks = async (workspaceSlug: string, projectId: string, issueId: string) =>
+    this.link.fetchDevelopmentLinks(workspaceSlug, projectId, issueId);
   fetchLinks = async (workspaceSlug: string, projectId: string, issueId: string) =>
     this.link.fetchLinks(workspaceSlug, projectId, issueId);
   createLink = async (workspaceSlug: string, projectId: string, issueId: string, data: Partial<TIssueLink>) =>

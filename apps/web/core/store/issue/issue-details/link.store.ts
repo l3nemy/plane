@@ -7,13 +7,24 @@
 import { set } from "lodash-es";
 import { action, computed, makeObservable, observable, runInAction } from "mobx";
 // services
-import type { TIssueLink, TIssueLinkMap, TIssueLinkIdMap, TIssueServiceType } from "@plane/types";
+import type {
+  TIssueGitHubDevelopmentLinks,
+  TIssueLink,
+  TIssueLinkIdMap,
+  TIssueLinkMap,
+  TIssueServiceType,
+} from "@plane/types";
 import { IssueService } from "@/services/issue";
 // types
 import type { IIssueDetail } from "./root.store";
 
 export interface IIssueLinkStoreActions {
   addLinks: (issueId: string, links: TIssueLink[]) => void;
+  fetchDevelopmentLinks: (
+    workspaceSlug: string,
+    projectId: string,
+    issueId: string
+  ) => Promise<TIssueGitHubDevelopmentLinks>;
   fetchLinks: (workspaceSlug: string, projectId: string, issueId: string) => Promise<TIssueLink[]>;
   createLink: (
     workspaceSlug: string,
@@ -33,17 +44,20 @@ export interface IIssueLinkStoreActions {
 
 export interface IIssueLinkStore extends IIssueLinkStoreActions {
   // observables
+  developmentLinks: Record<string, TIssueGitHubDevelopmentLinks>;
   links: TIssueLinkIdMap;
   linkMap: TIssueLinkMap;
   // computed
   issueLinks: string[] | undefined;
   // helper methods
   getLinksByIssueId: (issueId: string) => string[] | undefined;
+  getDevelopmentLinksByIssueId: (issueId: string) => TIssueGitHubDevelopmentLinks | undefined;
   getLinkById: (linkId: string) => TIssueLink | undefined;
 }
 
 export class IssueLinkStore implements IIssueLinkStore {
   // observables
+  developmentLinks: Record<string, TIssueGitHubDevelopmentLinks> = {};
   links: TIssueLinkIdMap = {};
   linkMap: TIssueLinkMap = {};
   // root store
@@ -55,12 +69,14 @@ export class IssueLinkStore implements IIssueLinkStore {
   constructor(rootStore: IIssueDetail, serviceType: TIssueServiceType) {
     makeObservable(this, {
       // observables
+      developmentLinks: observable,
       links: observable,
       linkMap: observable,
       // computed
       issueLinks: computed,
       // actions
       addLinks: action.bound,
+      fetchDevelopmentLinks: action,
       fetchLinks: action,
       createLink: action,
       updateLink: action,
@@ -86,6 +102,11 @@ export class IssueLinkStore implements IIssueLinkStore {
     return this.links[issueId] ?? undefined;
   };
 
+  getDevelopmentLinksByIssueId = (issueId: string) => {
+    if (!issueId) return undefined;
+    return this.developmentLinks[issueId] ?? undefined;
+  };
+
   getLinkById = (linkId: string) => {
     if (!linkId) return undefined;
     return this.linkMap[linkId] ?? undefined;
@@ -102,6 +123,16 @@ export class IssueLinkStore implements IIssueLinkStore {
   fetchLinks = async (workspaceSlug: string, projectId: string, issueId: string) => {
     const response = await this.issueService.fetchIssueLinks(workspaceSlug, projectId, issueId);
     this.addLinks(issueId, response);
+    return response;
+  };
+
+  fetchDevelopmentLinks = async (workspaceSlug: string, projectId: string, issueId: string) => {
+    const response = await this.issueService.fetchIssueDevelopmentLinks(workspaceSlug, projectId, issueId);
+
+    runInAction(() => {
+      this.developmentLinks[issueId] = response;
+    });
+
     return response;
   };
 

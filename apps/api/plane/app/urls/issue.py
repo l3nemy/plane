@@ -112,6 +112,11 @@ urlpatterns = [
         name="project-issue-links",
     ),
     path(
+        "workspaces/<str:slug>/projects/<uuid:project_id>/issues/<uuid:issue_id>/issue-links/development/",
+        IssueLinkViewSet.as_view({"get": "development"}),
+        name="project-issue-development-links",
+    ),
+    path(
         "workspaces/<str:slug>/projects/<uuid:project_id>/issues/<uuid:issue_id>/issue-links/<uuid:pk>/",
         IssueLinkViewSet.as_view(
             {

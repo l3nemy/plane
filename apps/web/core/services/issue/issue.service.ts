@@ -13,6 +13,7 @@ import type {
   TBulkOperationsPayload,
   TIssue,
   TIssueActivity,
+  TIssueGitHubDevelopmentLinks,
   TIssueLink,
   TIssueServiceType,
   TIssuesResponse,
@@ -286,6 +287,27 @@ export class IssueService extends APIService {
   async fetchIssueLinks(workspaceSlug: string, projectId: string, issueId: string): Promise<TIssueLink[]> {
     return this.get(
       `/api/workspaces/${workspaceSlug}/projects/${projectId}/${this.serviceType}/${issueId}/${this.serviceType === EIssueServiceType.EPICS ? "links" : "issue-links"}/`
+    )
+      .then((response) => response?.data)
+      .catch((error) => {
+        throw error?.response;
+      });
+  }
+
+  async fetchIssueDevelopmentLinks(
+    workspaceSlug: string,
+    projectId: string,
+    issueId: string
+  ): Promise<TIssueGitHubDevelopmentLinks> {
+    if (this.serviceType === EIssueServiceType.EPICS) {
+      return {
+        commits: [],
+        pull_requests: [],
+      };
+    }
+
+    return this.get(
+      `/api/workspaces/${workspaceSlug}/projects/${projectId}/${this.serviceType}/${issueId}/issue-links/development/`
     )
       .then((response) => response?.data)
       .catch((error) => {

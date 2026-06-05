@@ -542,6 +542,14 @@ class TestGitHubIntegration:
                 "head": {
                     "ref": "feature/github-sync",
                 },
+                "assignees": [
+                    {
+                        "login": "jihyeok",
+                    }
+                ],
+            },
+            "sender": {
+                "login": "jihyeok",
             },
         }
 
@@ -576,11 +584,27 @@ class TestGitHubIntegration:
             metadata__sha="bbb222",
         )
         assert second_issue_commit_link.title == "bbb222: connect TP-2 from a PR commit"
+        assert second_issue_commit_link.metadata["pull_request_number"] == 7
+        assert second_issue_commit_link.metadata["pull_request_url"] == "https://github.com/makeplane/plane/pull/7"
         assert not IssueLink.objects.filter(
             issue=second_issue,
             metadata__type="commit",
             metadata__sha="aaa111",
         ).exists()
+
+        development_response = session_client.get(
+            f"/api/workspaces/{workspace.slug}/projects/{project.id}/issues/{first_issue.id}/"
+            "issue-links/development/"
+        )
+
+        assert development_response.status_code == 200
+        assert len(development_response.data["pull_requests"]) == 1
+        assert development_response.data["pull_requests"][0]["number"] == 7
+        assert development_response.data["pull_requests"][0]["actor"]["login"] == "jihyeok"
+        assert development_response.data["pull_requests"][0]["assignees"][0]["login"] == "jihyeok"
+        assert len(development_response.data["pull_requests"][0]["commits"]) == 2
+        assert development_response.data["pull_requests"][0]["commits"][0]["pull_request_number"] == 7
+        assert development_response.data["commits"] == []
 
         duplicate_response = session_client.post(
             "/api/integrations/github/webhook",

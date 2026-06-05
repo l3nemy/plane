@@ -23,6 +23,96 @@ from plane.bgtasks.work_item_link_task import crawl_work_item_link_title
 from plane.utils.host import base_host
 
 
+def serialize_datetime(value):
+    if not value:
+        return None
+
+    return value.isoformat()
+
+
+def serialize_github_commit_development_link(issue_link):
+    metadata = issue_link.metadata or {}
+
+    return {
+        "id": str(issue_link.id),
+        "title": issue_link.title,
+        "url": issue_link.url,
+        "repository_id": metadata.get("repository_id"),
+        "repository": metadata.get("repository"),
+        "sha": metadata.get("sha"),
+        "short_sha": metadata.get("short_sha") or str(metadata.get("sha") or "")[:7],
+        "message": metadata.get("message") or issue_link.title,
+        "author_login": metadata.get("author_login"),
+        "committed_at": metadata.get("committed_at"),
+        "link_source": metadata.get("link_source"),
+        "pull_request_number": metadata.get("pull_request_number"),
+        "pull_request_title": metadata.get("pull_request_title"),
+        "pull_request_url": metadata.get("pull_request_url"),
+        "created_at": serialize_datetime(issue_link.created_at),
+    }
+
+
+def serialize_github_pull_request_development_link(issue_link):
+    metadata = issue_link.metadata or {}
+
+    return {
+        "id": str(issue_link.id),
+        "title": issue_link.title,
+        "url": issue_link.url,
+        "repository_id": metadata.get("repository_id"),
+        "repository": metadata.get("repository"),
+        "number": metadata.get("number"),
+        "state": metadata.get("state"),
+        "draft": metadata.get("draft"),
+        "merged": metadata.get("merged"),
+        "actor": metadata.get("github_actor") or {},
+        "assignees": metadata.get("github_assignees") or [],
+        "created_at": serialize_datetime(issue_link.created_at),
+        "updated_at": serialize_datetime(issue_link.updated_at),
+        "commits": [],
+    }
+
+
+def get_pull_request_group_key(metadata):
+    repository_id = metadata.get("repository_id")
+    pull_request_number = metadata.get("number")
+
+    if repository_id is None or pull_request_number is None:
+        return None
+
+    return (str(repository_id), str(pull_request_number))
+
+
+def get_commit_pull_request_group_key(metadata):
+    repository_id = metadata.get("repository_id")
+    pull_request_number = metadata.get("pull_request_number")
+
+    if repository_id is None or pull_request_number is None:
+        return None
+
+    return (str(repository_id), str(pull_request_number))
+
+
+def get_fallback_pull_request_group_key(metadata, pull_request_links):
+    if metadata.get("link_source") not in ["pull_request", "pull_request_backfill"]:
+        return None
+
+    repository_id = metadata.get("repository_id")
+    if repository_id is None:
+        return None
+
+    matching_pull_request_keys = [
+        group_key
+        for group_key, pull_request_link in pull_request_links.items()
+        if group_key[0] == str(repository_id) and pull_request_link is not None
+    ]
+
+    if len(matching_pull_request_keys) != 1:
+        return None
+
+    return matching_pull_request_keys[0]
+
+
 class IssueLinkViewSet(BaseViewSet):
     permission_classes = [ProjectEntityPermission]
 
@@ -43,6 +133,65 @@ class IssueLinkViewSet(BaseViewSet):
             )
             .order_by("-created_at")
             .distinct()
+        )
+
+    def development(self, request, slug, project_id, issue_id):
+        github_links = self.get_queryset().filter(
+            metadata__source="github",
+            metadata__type__in=["pull_request", "commit"],
+        )
+        pull_requests = []
+        pull_request_links_by_key = {}
+        orphan_commits = []
+
+        for issue_link in github_links:
+            metadata = issue_link.metadata or {}
+            if metadata.get("type") != "pull_request":
+                continue
+
+            pull_request = serialize_github_pull_request_development_link(issue_link)
+            pull_requests.append(pull_request)
+
+            group_key = get_pull_request_group_key(metadata)
+            if group_key:
+                pull_request_links_by_key[group_key] = pull_request
+
+        for issue_link in github_links:
+            metadata = issue_link.metadata or {}
+            if metadata.get("type") != "commit":
+                continue
+
+            commit = serialize_github_commit_development_link(issue_link)
+            group_key = get_commit_pull_request_group_key(metadata) or get_fallback_pull_request_group_key(
+                metadata,
+                pull_request_links_by_key,
+            )
+
+            if group_key and group_key in pull_request_links_by_key:
+                pull_request_links_by_key[group_key]["commits"].append(commit)
+                continue
+
+            orphan_commits.append(commit)
+
+        for pull_request in pull_requests:
+            pull_request["commits"] = sorted(
+                pull_request["commits"],
+                key=lambda commit: commit.get("committed_at") or commit.get("created_at") or "",
+                reverse=True,
+            )
+
+        orphan_commits = sorted(
+            orphan_commits,
+            key=lambda commit: commit.get("committed_at") or commit.get("created_at") or "",
+            reverse=True,
+        )
+
+        return Response(
+            {
+                "pull_requests": pull_requests,
+                "commits": orphan_commits,
+            },
+            status=status.HTTP_200_OK,
         )
 
     def create(self, request, slug, project_id, issue_id):

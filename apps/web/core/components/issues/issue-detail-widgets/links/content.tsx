@@ -4,7 +4,8 @@
  * See the LICENSE file for details.
  */
 
-import React from "react";
+import React, { useEffect } from "react";
+import { observer } from "mobx-react";
 import type { TIssueLink, TIssueServiceType } from "@plane/types";
 // components
 import { LinkList } from "../../issue-detail/links";
@@ -23,11 +24,12 @@ type Props = {
   issueServiceType: TIssueServiceType;
 };
 
-export function IssueLinksCollapsibleContent(props: Props) {
+const IssueLinksCollapsibleContent = observer(function IssueLinksCollapsibleContent(props: Props) {
   const { workspaceSlug, projectId, issueId, disabled, issueServiceType } = props;
   // store hooks
   const {
-    link: { getLinkById, getLinksByIssueId },
+    fetchDevelopmentLinks,
+    link: { getDevelopmentLinksByIssueId, getLinkById, getLinksByIssueId },
   } = useIssueDetail(issueServiceType);
 
   // helper
@@ -37,10 +39,17 @@ export function IssueLinksCollapsibleContent(props: Props) {
     .map((linkId) => getLinkById(linkId))
     .filter((link): link is TIssueLink => !!link);
   const githubLinkIds = links.filter(isGitHubDevelopmentLink).map((link) => link.id);
+  const developmentLinks = getDevelopmentLinksByIssueId(issueId);
+
+  useEffect(() => {
+    fetchDevelopmentLinks(workspaceSlug, projectId, issueId).catch((error) => {
+      console.error("Failed to fetch development links", error);
+    });
+  }, [fetchDevelopmentLinks, issueId, projectId, workspaceSlug]);
 
   return (
     <>
-      <GitHubDevelopmentLinks links={links} />
+      <GitHubDevelopmentLinks developmentLinks={developmentLinks} />
       <LinkList
         issueId={issueId}
         linkOperations={handleLinkOperations}
@@ -50,4 +59,6 @@ export function IssueLinksCollapsibleContent(props: Props) {
       />
     </>
   );
-}
+});
+
+export { IssueLinksCollapsibleContent };
