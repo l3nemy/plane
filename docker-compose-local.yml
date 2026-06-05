@@ -23,30 +23,23 @@ services:
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
       RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST}
 
-  plane-minio:
-    image: minio/minio
+  plane-rustfs:
+    image: rustfs/rustfs:latest
     restart: unless-stopped
     networks:
       - dev_env
-    entrypoint: >
-      /bin/sh -c "
-      mkdir -p /export/${AWS_S3_BUCKET_NAME} &&
-      minio server /export --console-address ':9090' &
-      sleep 5 &&
-      mc alias set myminio http://localhost:9000 ${AWS_ACCESS_KEY_ID} ${AWS_SECRET_ACCESS_KEY} &&
-      mc mb myminio/${AWS_S3_BUCKET_NAME} -p || true
-      && tail -f /dev/null
-      "
+    command: --console-enable /export
     volumes:
       - uploads:/export
     env_file:
       - .env
     environment:
-      MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID}
-      MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY}
+      RUSTFS_ACCESS_KEY: ${AWS_ACCESS_KEY_ID}
+      RUSTFS_SECRET_KEY: ${AWS_SECRET_ACCESS_KEY}
+      RUSTFS_CONSOLE_ENABLE: "true"
     ports:
       - "9000:9000"
-      - "9090:9090"
+      - "9001:9001"
 
   plane-db:
     image: postgres:15.7-alpine

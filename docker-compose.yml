@@ -140,16 +140,17 @@ services:
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
 
-  plane-minio:
-    container_name: plane-minio
-    image: minio/minio
+  plane-rustfs:
+    container_name: plane-rustfs
+    image: rustfs/rustfs:latest
     restart: always
-    command: server /export --console-address ":9090"
+    command: --console-enable /export
     volumes:
       - uploads:/export
     environment:
-      MINIO_ROOT_USER: ${AWS_ACCESS_KEY_ID}
-      MINIO_ROOT_PASSWORD: ${AWS_SECRET_ACCESS_KEY}
+      RUSTFS_ACCESS_KEY: ${AWS_ACCESS_KEY_ID}
+      RUSTFS_SECRET_KEY: ${AWS_SECRET_ACCESS_KEY}
+      RUSTFS_CONSOLE_ENABLE: "true"
 
   # Comment this if you already have a reverse proxy running
   proxy:
@@ -169,6 +170,7 @@ services:
       - api
       - space
       - admin
+      - plane-rustfs
 
 volumes:
   pgdata:

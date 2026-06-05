@@ -482,7 +482,7 @@ function viewLogs(){
         echo "   7) Proxy"
         echo "   8) Redis"
         echo "   9) Postgres"
-        echo "   10) Minio"
+        echo "   10) RustFS"
         echo "   11) RabbitMQ"
         echo "   0) Back to Main Menu"
         echo 
@@ -507,7 +507,7 @@ function viewLogs(){
                 7) viewSpecificLogs "proxy";;
                 8) viewSpecificLogs "plane-redis";;
                 9) viewSpecificLogs "plane-db";;
-                10) viewSpecificLogs "plane-minio";;
+                10) viewSpecificLogs "plane-rustfs";;
                 11) viewSpecificLogs "plane-mq";;
                 0) askForAction;;
                 *) echo "INVALID SERVICE NAME SUPPLIED";;
@@ -526,7 +526,7 @@ function viewLogs(){
             proxy) viewSpecificLogs "proxy";;
             redis) viewSpecificLogs "plane-redis";;
             postgres) viewSpecificLogs "plane-db";;
-            minio) viewSpecificLogs "plane-minio";;
+            rustfs|minio) viewSpecificLogs "plane-rustfs";;
             rabbitmq) viewSpecificLogs "plane-mq";;
             *) echo "INVALID SERVICE NAME SUPPLIED";;
         esac
