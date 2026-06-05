@@ -55,7 +55,7 @@ export const IssueDetailWidgetCollapsibles = observer(function IssueDetailWidget
   const visibleIssueLinksCount =
     issueLinkIds?.map((linkId) => getLinkById(linkId)).filter((link) => link && !isGitHubDevelopmentLink(link))
       .length ?? 0;
-  const shouldPollDevelopmentLinks = !hideWidgets?.includes("development");
+  const shouldFetchDevelopmentLinks = !hideWidgets?.includes("development");
   // render conditions
   const shouldRenderSubIssues = !!subIssues && subIssues.length > 0 && !hideWidgets?.includes("sub-work-items");
   const shouldRenderRelations = issueRelationsCount > 0 && !hideWidgets?.includes("relations");
@@ -70,20 +70,12 @@ export const IssueDetailWidgetCollapsibles = observer(function IssueDetailWidget
     (!!attachmentUploads && attachmentUploads.length > 0 && !hideWidgets?.includes("attachments"));
 
   useEffect(() => {
-    if (!shouldPollDevelopmentLinks) return undefined;
+    if (!shouldFetchDevelopmentLinks) return;
 
     fetchDevelopmentLinks(workspaceSlug, projectId, issueId).catch((error) => {
       console.error("Failed to fetch development links", error);
     });
-
-    const intervalId = window.setInterval(() => {
-      fetchDevelopmentLinks(workspaceSlug, projectId, issueId).catch((error) => {
-        console.error("Failed to refresh development links", error);
-      });
-    }, 15000);
-
-    return () => window.clearInterval(intervalId);
-  }, [fetchDevelopmentLinks, issueId, projectId, shouldPollDevelopmentLinks, workspaceSlug]);
+  }, [fetchDevelopmentLinks, issueId, projectId, shouldFetchDevelopmentLinks, workspaceSlug]);
 
   return (
     <div className="flex flex-col">

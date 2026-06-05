@@ -6,6 +6,7 @@
 import json
 
 # Django imports
+from django.db.models import Q
 from django.utils import timezone
 from django.core.serializers.json import DjangoJSONEncoder
 
@@ -15,9 +16,9 @@ from rest_framework import status
 
 # Module imports
 from .. import BaseViewSet
-from plane.app.serializers import IssueLinkSerializer
+from plane.app.serializers import IssueLinkSerializer, UserLiteSerializer
 from plane.app.permissions import ProjectEntityPermission
-from plane.db.models import IssueLink
+from plane.db.models import Account, IssueLink
 from plane.bgtasks.issue_activities_task import issue_activity
 from plane.bgtasks.work_item_link_task import crawl_work_item_link_title
 from plane.utils.host import base_host
@@ -30,8 +31,53 @@ def serialize_datetime(value):
     return value.isoformat()
 
 
-def serialize_github_commit_development_link(issue_link):
+def resolve_github_development_user(github_user, project_id):
+    github_user = github_user or {}
+    github_id = github_user.get("id")
+    github_login = github_user.get("login")
+
+    if not github_id and not github_login:
+        return None
+
+    filters = Q()
+    if github_id:
+        filters |= Q(provider_account_id=str(github_id))
+    if github_login:
+        filters |= Q(metadata__login__iexact=str(github_login))
+
+    account = (
+        Account.objects.filter(provider="github")
+        .filter(filters)
+        .filter(
+            user__member_project__project_id=project_id,
+            user__member_project__is_active=True,
+        )
+        .select_related("user")
+        .first()
+    )
+
+    return account.user if account else None
+
+
+def serialize_plane_user(user):
+    if not user:
+        return None
+
+    return UserLiteSerializer(user).data
+
+
+def serialize_github_development_actor(github_user, project_id):
+    github_user = github_user or {}
+
+    return {
+        **github_user,
+        "plane_user": serialize_plane_user(resolve_github_development_user(github_user, project_id)),
+    }
+
+
+def serialize_github_commit_development_link(issue_link, project_id):
     metadata = issue_link.metadata or {}
+    author_login = metadata.get("author_login")
 
     return {
         "id": str(issue_link.id),
@@ -42,7 +88,8 @@ def serialize_github_commit_development_link(issue_link):
         "sha": metadata.get("sha"),
         "short_sha": metadata.get("short_sha") or str(metadata.get("sha") or "")[:7],
         "message": metadata.get("message") or issue_link.title,
-        "author_login": metadata.get("author_login"),
+        "author": serialize_github_development_actor({"login": author_login}, project_id) if author_login else None,
+        "author_login": author_login,
         "committed_at": metadata.get("committed_at"),
         "link_source": metadata.get("link_source"),
         "pull_request_number": metadata.get("pull_request_number"),
@@ -52,7 +99,7 @@ def serialize_github_commit_development_link(issue_link):
     }
 
 
-def serialize_github_pull_request_development_link(issue_link):
+def serialize_github_pull_request_development_link(issue_link, project_id):
     metadata = issue_link.metadata or {}
 
     return {
@@ -65,8 +112,10 @@ def serialize_github_pull_request_development_link(issue_link):
         "state": metadata.get("state"),
         "draft": metadata.get("draft"),
         "merged": metadata.get("merged"),
-        "actor": metadata.get("github_actor") or {},
-        "assignees": metadata.get("github_assignees") or [],
+        "actor": serialize_github_development_actor(metadata.get("github_actor"), project_id),
+        "assignees": [
+            serialize_github_development_actor(assignee, project_id) for assignee in metadata.get("github_assignees") or []
+        ],
         "created_at": serialize_datetime(issue_link.created_at),
         "updated_at": serialize_datetime(issue_link.updated_at),
         "commits": [],
@@ -149,7 +198,7 @@ class IssueLinkViewSet(BaseViewSet):
             if metadata.get("type") != "pull_request":
                 continue
 
-            pull_request = serialize_github_pull_request_development_link(issue_link)
+            pull_request = serialize_github_pull_request_development_link(issue_link, project_id)
             pull_requests.append(pull_request)
 
             group_key = get_pull_request_group_key(metadata)
@@ -161,7 +210,7 @@ class IssueLinkViewSet(BaseViewSet):
             if metadata.get("type") != "commit":
                 continue
 
-            commit = serialize_github_commit_development_link(issue_link)
+            commit = serialize_github_commit_development_link(issue_link, project_id)
             group_key = get_commit_pull_request_group_key(metadata) or get_fallback_pull_request_group_key(
                 metadata,
                 pull_request_links_by_key,

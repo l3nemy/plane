@@ -103,6 +103,7 @@ export class IssueStore implements IIssueStore {
     if (issue && issue?.parent && issue?.parent?.id && issue?.parent?.project_id) {
       this.issueService.retrieve(workspaceSlug, issue.parent.project_id, issue?.parent?.id).then((res) => {
         this.rootIssueDetailStore.rootIssueStore.issues.addIssue([res]);
+        return res;
       });
     }
     // assignees
@@ -113,7 +114,10 @@ export class IssueStore implements IIssueStore {
     if (issue.issue_reactions) this.rootIssueDetailStore.addReactions(issueId, issue.issue_reactions);
 
     // fetch issue links
-    if (issue.issue_link) this.rootIssueDetailStore.addLinks(issueId, issue.issue_link);
+    if (issue.issue_link) {
+      this.rootIssueDetailStore.addLinks(issueId, issue.issue_link);
+      this.rootIssueDetailStore.fetchDevelopmentLinks(workspaceSlug, projectId, issueId);
+    }
 
     // fetch issue attachments
     if (issue.issue_attachments) this.rootIssueDetailStore.addAttachments(issueId, issue.issue_attachments);
@@ -288,6 +292,7 @@ export class IssueStore implements IIssueStore {
     if (issue?.parent && issue?.parent?.id && issue?.parent?.project_id) {
       this.issueService.retrieve(workspaceSlug, issue.parent.project_id, issue.parent.id).then((res) => {
         this.rootIssueDetailStore.rootIssueStore.issues.addIssue([res]);
+        return res;
       });
     }
 
@@ -296,7 +301,10 @@ export class IssueStore implements IIssueStore {
 
     // add related data
     if (issue.issue_reactions) rootWorkItemDetailStore.addReactions(issue.id, issue.issue_reactions);
-    if (issue.issue_link) rootWorkItemDetailStore.addLinks(issue.id, issue.issue_link);
+    if (issue.issue_link) {
+      rootWorkItemDetailStore.addLinks(issue.id, issue.issue_link);
+      rootWorkItemDetailStore.fetchDevelopmentLinks(workspaceSlug, projectId, issue.id);
+    }
     if (issue.issue_attachments) rootWorkItemDetailStore.addAttachments(issue.id, issue.issue_attachments);
     rootWorkItemDetailStore.addSubscription(issue.id, issue.is_subscribed);
 
@@ -305,7 +313,10 @@ export class IssueStore implements IIssueStore {
     if (issue.issue_reactions) rootWorkItemDetailStore.addReactions(issueId, issue.issue_reactions);
 
     // fetch issue links
-    if (issue.issue_link) rootWorkItemDetailStore.addLinks(issueId, issue.issue_link);
+    if (issue.issue_link) {
+      rootWorkItemDetailStore.addLinks(issueId, issue.issue_link);
+      rootWorkItemDetailStore.fetchDevelopmentLinks(workspaceSlug, projectId, issueId);
+    }
 
     // fetch issue attachments
     if (issue.issue_attachments) rootWorkItemDetailStore.addAttachments(issueId, issue.issue_attachments);

@@ -490,6 +490,13 @@ class TestGitHubIntegration:
         )
         project = Project.objects.create(name="Test Project", identifier="TP", workspace=workspace)
         ProjectMember.objects.create(project=project, workspace=workspace, member=create_user, role=20)
+        Account.objects.create(
+            user=create_user,
+            provider="github",
+            provider_account_id="github-jihyeok",
+            access_token="",
+            metadata={"login": "jihyeok"},
+        )
         state = State.objects.create(
             name="Todo",
             group=StateGroup.UNSTARTED.value,
@@ -601,9 +608,16 @@ class TestGitHubIntegration:
         assert len(development_response.data["pull_requests"]) == 1
         assert development_response.data["pull_requests"][0]["number"] == 7
         assert development_response.data["pull_requests"][0]["actor"]["login"] == "jihyeok"
+        assert str(development_response.data["pull_requests"][0]["actor"]["plane_user"]["id"]) == str(create_user.id)
         assert development_response.data["pull_requests"][0]["assignees"][0]["login"] == "jihyeok"
+        assert str(development_response.data["pull_requests"][0]["assignees"][0]["plane_user"]["id"]) == str(
+            create_user.id
+        )
         assert len(development_response.data["pull_requests"][0]["commits"]) == 2
         assert development_response.data["pull_requests"][0]["commits"][0]["pull_request_number"] == 7
+        assert str(development_response.data["pull_requests"][0]["commits"][0]["author"]["plane_user"]["id"]) == str(
+            create_user.id
+        )
         assert development_response.data["commits"] == []
 
         duplicate_response = session_client.post(
@@ -717,7 +731,7 @@ class TestGitHubIntegration:
         )
         IssueLink.objects.create(
             issue=first_issue,
-            title="GitHub commit aaa111",
+            title="aaa111: prepare github sync",
             url="https://github.com/makeplane/plane/commit/aaa111",
             metadata={
                 "source": "github",
@@ -747,6 +761,14 @@ class TestGitHubIntegration:
             metadata__type="commit",
             metadata__sha="aaa111",
         ).title == "aaa111: prepare github sync"
+        assert (
+            IssueLink.objects.get(
+                issue=first_issue,
+                metadata__type="commit",
+                metadata__sha="aaa111",
+            ).metadata["pull_request_number"]
+            == 7
+        )
         assert IssueLink.objects.filter(
             issue=second_issue,
             metadata__type="pull_request",

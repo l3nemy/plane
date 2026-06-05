@@ -570,9 +570,13 @@ def backfill_existing_pull_request_commits(
             metadata__repository_id=repository_sync.repository.repository_id,
             metadata__link_source__in=["pull_request", "pull_request_backfill"],
         )
+        has_commit_links_missing_pull_request_context = any(
+            not (commit_link.metadata or {}).get("pull_request_number") for commit_link in pull_request_commit_links
+        )
         if (
             only_missing
             and pull_request_commit_links.exists()
+            and not has_commit_links_missing_pull_request_context
             and not pull_request_commit_links.filter(title__startswith="GitHub commit ").exists()
         ):
             continue

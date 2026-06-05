@@ -59,18 +59,25 @@ const getShortDate = (value: string | undefined) => {
   return value.split("T")[0];
 };
 
-const getActorLogin = (actor: TGitHubDevelopmentActor | undefined) => actor?.login;
+const getActorLogin = (actor: TGitHubDevelopmentActor | null | undefined) => actor?.login;
+
+const getActorDisplayName = (actor: TGitHubDevelopmentActor | null | undefined) => {
+  const planeUserName = actor?.plane_user?.display_name;
+  if (planeUserName) return planeUserName;
+
+  const login = getActorLogin(actor);
+  return login ? `@${login}` : undefined;
+};
 
 const getAssigneeSummary = (assignees: TGitHubDevelopmentActor[]) => {
-  const assigneeLogins = assignees.map((assignee) => assignee.login).filter((login): login is string => !!login);
+  const assigneeNames = assignees
+    .map((assignee) => getActorDisplayName(assignee))
+    .filter((name): name is string => !!name);
 
-  if (assigneeLogins.length === 0) return undefined;
-  if (assigneeLogins.length <= 2) return assigneeLogins.map((login) => `@${login}`).join(", ");
+  if (assigneeNames.length === 0) return undefined;
+  if (assigneeNames.length <= 2) return assigneeNames.join(", ");
 
-  return `${assigneeLogins
-    .slice(0, 2)
-    .map((login) => `@${login}`)
-    .join(", ")} +${assigneeLogins.length - 2}`;
+  return `${assigneeNames.slice(0, 2).join(", ")} +${assigneeNames.length - 2}`;
 };
 
 const CommitRow = (props: { commit: TIssueGitHubCommitDevelopmentLink; isMobile: boolean }) => {
@@ -78,6 +85,8 @@ const CommitRow = (props: { commit: TIssueGitHubCommitDevelopmentLink; isMobile:
   const committedDate = getShortDate(commit.committed_at);
   const message = getCommitMessage(commit);
   const shortSha = getCommitShortSha(commit);
+  const authorName =
+    getActorDisplayName(commit.author) || (commit.author_login ? `@${commit.author_login}` : undefined);
 
   return (
     <a
@@ -94,7 +103,7 @@ const CommitRow = (props: { commit: TIssueGitHubCommitDevelopmentLink; isMobile:
         </Tooltip>
       </div>
       <div className="flex flex-shrink-0 items-center gap-2 text-caption-sm-regular text-tertiary">
-        {commit.author_login && <span>@{commit.author_login}</span>}
+        {authorName && <span>{authorName}</span>}
         {committedDate && <span>{committedDate}</span>}
       </div>
     </a>
@@ -104,7 +113,7 @@ const CommitRow = (props: { commit: TIssueGitHubCommitDevelopmentLink; isMobile:
 const PullRequestRow = (props: { isMobile: boolean; pullRequest: TIssueGitHubPullRequestDevelopmentLink }) => {
   const { isMobile, pullRequest } = props;
   const { t } = useTranslation();
-  const actorLogin = getActorLogin(pullRequest.actor);
+  const actorName = getActorDisplayName(pullRequest.actor);
   const assigneeSummary = getAssigneeSummary(pullRequest.assignees);
 
   return (
@@ -124,7 +133,7 @@ const PullRequestRow = (props: { isMobile: boolean; pullRequest: TIssueGitHubPul
             <p className="truncate text-caption-sm-regular text-tertiary">
               {pullRequest.repository}
               {pullRequest.number ? ` #${pullRequest.number}` : ""}
-              {actorLogin ? ` ${t("issue.development.by")} @${actorLogin}` : ""}
+              {actorName ? ` ${t("issue.development.by")} ${actorName}` : ""}
               {assigneeSummary ? ` ${t("issue.development.assigned")} ${assigneeSummary}` : ""}
             </p>
           </div>

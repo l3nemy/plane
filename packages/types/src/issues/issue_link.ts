@@ -4,6 +4,8 @@
  * See the LICENSE file for details.
  */
 
+import type { IUserLite } from "../users";
+
 type TIssueLinkEditableFields = {
   title: string;
   url: string;
@@ -31,9 +33,11 @@ type TGitHubDevelopmentActor = {
   avatar_url?: string;
   html_url?: string;
   login?: string;
+  plane_user?: IUserLite | null;
 };
 
 type TIssueGitHubCommitDevelopmentLink = {
+  author?: TGitHubDevelopmentActor | null;
   author_login?: string;
   committed_at?: string;
   created_at?: string;
