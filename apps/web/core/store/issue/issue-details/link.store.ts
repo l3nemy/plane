@@ -123,6 +123,7 @@ export class IssueLinkStore implements IIssueLinkStore {
   fetchLinks = async (workspaceSlug: string, projectId: string, issueId: string) => {
     const response = await this.issueService.fetchIssueLinks(workspaceSlug, projectId, issueId);
     this.addLinks(issueId, response);
+    await this.fetchDevelopmentLinks(workspaceSlug, projectId, issueId);
     return response;
   };
 
@@ -148,6 +149,7 @@ export class IssueLinkStore implements IIssueLinkStore {
     });
     // fetching activity
     this.rootIssueDetailStore.activity.fetchActivities(workspaceSlug, projectId, issueId);
+    this.fetchDevelopmentLinks(workspaceSlug, projectId, issueId);
     return response;
   };
 
@@ -170,6 +172,7 @@ export class IssueLinkStore implements IIssueLinkStore {
 
       // fetching activity
       this.rootIssueDetailStore.activity.fetchActivities(workspaceSlug, projectId, issueId);
+      this.fetchDevelopmentLinks(workspaceSlug, projectId, issueId);
       return response;
     } catch (error) {
       console.error("error", error);
@@ -198,5 +201,6 @@ export class IssueLinkStore implements IIssueLinkStore {
 
     // fetching activity
     this.rootIssueDetailStore.activity.fetchActivities(workspaceSlug, projectId, issueId);
+    this.fetchDevelopmentLinks(workspaceSlug, projectId, issueId);
   };
 }

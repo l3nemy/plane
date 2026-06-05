@@ -4,17 +4,16 @@
  * See the LICENSE file for details.
  */
 
-import React, { useEffect } from "react";
 import { observer } from "mobx-react";
 import type { TIssueLink, TIssueServiceType } from "@plane/types";
 // components
 import { LinkList } from "../../issue-detail/links";
+// development
+import { isGitHubDevelopmentLink } from "../development";
 // helper
 import { useLinkOperations } from "./helper";
 // hooks
 import { useIssueDetail } from "@/hooks/store/use-issue-detail";
-// local imports
-import { GitHubDevelopmentLinks, isGitHubDevelopmentLink } from "./github-development";
 
 type Props = {
   workspaceSlug: string;
@@ -28,8 +27,7 @@ const IssueLinksCollapsibleContent = observer(function IssueLinksCollapsibleCont
   const { workspaceSlug, projectId, issueId, disabled, issueServiceType } = props;
   // store hooks
   const {
-    fetchDevelopmentLinks,
-    link: { getDevelopmentLinksByIssueId, getLinkById, getLinksByIssueId },
+    link: { getLinkById, getLinksByIssueId },
   } = useIssueDetail(issueServiceType);
 
   // helper
@@ -39,25 +37,15 @@ const IssueLinksCollapsibleContent = observer(function IssueLinksCollapsibleCont
     .map((linkId) => getLinkById(linkId))
     .filter((link): link is TIssueLink => !!link);
   const githubLinkIds = links.filter(isGitHubDevelopmentLink).map((link) => link.id);
-  const developmentLinks = getDevelopmentLinksByIssueId(issueId);
-
-  useEffect(() => {
-    fetchDevelopmentLinks(workspaceSlug, projectId, issueId).catch((error) => {
-      console.error("Failed to fetch development links", error);
-    });
-  }, [fetchDevelopmentLinks, issueId, projectId, workspaceSlug]);
 
   return (
-    <>
-      <GitHubDevelopmentLinks developmentLinks={developmentLinks} />
-      <LinkList
-        issueId={issueId}
-        linkOperations={handleLinkOperations}
-        disabled={disabled}
-        hiddenLinkIds={githubLinkIds}
-        issueServiceType={issueServiceType}
-      />
-    </>
+    <LinkList
+      issueId={issueId}
+      linkOperations={handleLinkOperations}
+      disabled={disabled}
+      hiddenLinkIds={githubLinkIds}
+      issueServiceType={issueServiceType}
+    />
   );
 });
 

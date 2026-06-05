@@ -970,6 +970,24 @@ export default {
     },
   },
   issue: {
+    development: {
+      title: "Development",
+      pull_requests: "Pull requests",
+      commits: "Commits",
+      by: "by",
+      assigned: "assigned",
+      count: {
+        pr: "{count, plural, one {# PR} other {# PRs}}",
+        commit: "{count, plural, one {# commit} other {# commits}}",
+      },
+      status: {
+        open: "Open",
+        closed: "Closed",
+        draft: "Draft",
+        merged: "Merged",
+        pr: "PR",
+      },
+    },
     label: "{count, plural, one {Item Kerja} other {Item Kerja}}",
     all: "Semua Item Kerja",
     edit: "Edit item kerja",

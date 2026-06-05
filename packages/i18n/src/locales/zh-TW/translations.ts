@@ -954,6 +954,24 @@ export default {
     },
   },
   issue: {
+    development: {
+      title: "Development",
+      pull_requests: "Pull requests",
+      commits: "Commits",
+      by: "by",
+      assigned: "assigned",
+      count: {
+        pr: "{count, plural, one {# PR} other {# PRs}}",
+        commit: "{count, plural, one {# commit} other {# commits}}",
+      },
+      status: {
+        open: "Open",
+        closed: "Closed",
+        draft: "Draft",
+        merged: "Merged",
+        pr: "PR",
+      },
+    },
     label: "{count, plural, one {工作事項} other {工作事項}}",
     all: "所有工作事項",
     edit: "編輯工作事項",

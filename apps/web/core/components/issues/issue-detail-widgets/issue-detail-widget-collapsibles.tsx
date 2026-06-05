@@ -4,7 +4,7 @@
  * See the LICENSE file for details.
  */
 
-import React from "react";
+import React, { useEffect } from "react";
 import { observer } from "mobx-react";
 // plane imports
 import type { TIssueServiceType, TWorkItemWidgets } from "@plane/types";
@@ -15,6 +15,7 @@ import { WorkItemAdditionalWidgetCollapsibles } from "@/plane-web/components/iss
 import { useTimeLineRelationOptions } from "@/plane-web/components/relations";
 // local imports
 import { AttachmentsCollapsible } from "./attachments";
+import { DevelopmentCollapsible, isGitHubDevelopmentLink } from "./development";
 import { LinksCollapsible } from "./links";
 import { RelationsCollapsible } from "./relations";
 import { SubIssuesCollapsible } from "./sub-issues";
@@ -35,6 +36,8 @@ export const IssueDetailWidgetCollapsibles = observer(function IssueDetailWidget
     issue: { getIssueById },
     subIssues: { subIssuesByIssueId },
     attachment: { getAttachmentsCountByIssueId, getAttachmentsUploadStatusByIssueId },
+    fetchDevelopmentLinks,
+    link: { getDevelopmentLinksByIssueId, getLinkById, getLinksByIssueId },
     relation: { getRelationCountByIssueId },
   } = useIssueDetail(issueServiceType);
   // derived values
@@ -42,15 +45,45 @@ export const IssueDetailWidgetCollapsibles = observer(function IssueDetailWidget
   const subIssues = subIssuesByIssueId(issueId);
   const ISSUE_RELATION_OPTIONS = useTimeLineRelationOptions();
   const issueRelationsCount = getRelationCountByIssueId(issueId, ISSUE_RELATION_OPTIONS);
+  const developmentLinks = getDevelopmentLinksByIssueId(issueId);
+  const hasDevelopmentLinks =
+    !!developmentLinks &&
+    (developmentLinks.pull_requests.length > 0 ||
+      developmentLinks.commits.length > 0 ||
+      developmentLinks.pull_requests.some((pullRequest) => pullRequest.commits.length > 0));
+  const issueLinkIds = getLinksByIssueId(issueId);
+  const visibleIssueLinksCount =
+    issueLinkIds?.map((linkId) => getLinkById(linkId)).filter((link) => link && !isGitHubDevelopmentLink(link))
+      .length ?? 0;
+  const shouldPollDevelopmentLinks = !hideWidgets?.includes("development");
   // render conditions
   const shouldRenderSubIssues = !!subIssues && subIssues.length > 0 && !hideWidgets?.includes("sub-work-items");
   const shouldRenderRelations = issueRelationsCount > 0 && !hideWidgets?.includes("relations");
-  const shouldRenderLinks = !!issue?.link_count && issue?.link_count > 0 && !hideWidgets?.includes("links");
+  const shouldRenderDevelopment = hasDevelopmentLinks && !hideWidgets?.includes("development");
+  const shouldRenderLinks =
+    (issueLinkIds ? visibleIssueLinksCount > 0 : !!issue?.link_count && issue?.link_count > 0) &&
+    !hideWidgets?.includes("links");
   const attachmentUploads = getAttachmentsUploadStatusByIssueId(issueId);
   const attachmentsCount = getAttachmentsCountByIssueId(issueId);
   const shouldRenderAttachments =
     attachmentsCount > 0 ||
     (!!attachmentUploads && attachmentUploads.length > 0 && !hideWidgets?.includes("attachments"));
+
+  useEffect(() => {
+    if (!shouldPollDevelopmentLinks) return undefined;
+
+    fetchDevelopmentLinks(workspaceSlug, projectId, issueId).catch((error) => {
+      console.error("Failed to fetch development links", error);
+    });
+
+    const intervalId = window.setInterval(() => {
+      fetchDevelopmentLinks(workspaceSlug, projectId, issueId).catch((error) => {
+        console.error("Failed to refresh development links", error);
+      });
+    }, 15000);
+
+    return () => window.clearInterval(intervalId);
+  }, [fetchDevelopmentLinks, issueId, projectId, shouldPollDevelopmentLinks, workspaceSlug]);
 
   return (
     <div className="flex flex-col">
@@ -71,6 +104,7 @@ export const IssueDetailWidgetCollapsibles = observer(function IssueDetailWidget
           issueServiceType={issueServiceType}
         />
       )}
+      {shouldRenderDevelopment && <DevelopmentCollapsible issueId={issueId} issueServiceType={issueServiceType} />}
       {shouldRenderLinks && (
         <LinksCollapsible
           workspaceSlug={workspaceSlug}

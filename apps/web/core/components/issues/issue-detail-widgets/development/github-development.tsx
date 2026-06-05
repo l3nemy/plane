@@ -5,6 +5,7 @@
  */
 
 import { ExternalLink, GitCommit, GitPullRequest } from "lucide-react";
+import { useTranslation } from "@plane/i18n";
 // plane imports
 import type {
   TGitHubDevelopmentActor,
@@ -36,12 +37,12 @@ const isGitHubDevelopmentLink = (link: TIssueLink): boolean => {
   return metadata.source === "github" && (metadata.type === "pull_request" || metadata.type === "commit");
 };
 
-const getPullRequestStatus = (pullRequest: TIssueGitHubPullRequestDevelopmentLink): string => {
-  if (pullRequest.merged) return "Merged";
-  if (pullRequest.draft) return "Draft";
-  if (pullRequest.state === "closed") return "Closed";
-  if (pullRequest.state === "open") return "Open";
-  return "PR";
+const getPullRequestStatusKey = (pullRequest: TIssueGitHubPullRequestDevelopmentLink): string => {
+  if (pullRequest.merged) return "issue.development.status.merged";
+  if (pullRequest.draft) return "issue.development.status.draft";
+  if (pullRequest.state === "closed") return "issue.development.status.closed";
+  if (pullRequest.state === "open") return "issue.development.status.open";
+  return "issue.development.status.pr";
 };
 
 const getCommitMessage = (commit: TIssueGitHubCommitDevelopmentLink) =>
@@ -102,6 +103,7 @@ const CommitRow = (props: { commit: TIssueGitHubCommitDevelopmentLink; isMobile:
 
 const PullRequestRow = (props: { isMobile: boolean; pullRequest: TIssueGitHubPullRequestDevelopmentLink }) => {
   const { isMobile, pullRequest } = props;
+  const { t } = useTranslation();
   const actorLogin = getActorLogin(pullRequest.actor);
   const assigneeSummary = getAssigneeSummary(pullRequest.assignees);
 
@@ -122,17 +124,17 @@ const PullRequestRow = (props: { isMobile: boolean; pullRequest: TIssueGitHubPul
             <p className="truncate text-caption-sm-regular text-tertiary">
               {pullRequest.repository}
               {pullRequest.number ? ` #${pullRequest.number}` : ""}
-              {actorLogin ? ` by @${actorLogin}` : ""}
-              {assigneeSummary ? ` assigned ${assigneeSummary}` : ""}
+              {actorLogin ? ` ${t("issue.development.by")} @${actorLogin}` : ""}
+              {assigneeSummary ? ` ${t("issue.development.assigned")} ${assigneeSummary}` : ""}
             </p>
           </div>
         </div>
         <div className="flex flex-shrink-0 items-center gap-2">
           <span className="rounded-sm bg-surface-1 px-1.5 py-0.5 text-caption-sm-medium text-secondary">
-            {getPullRequestStatus(pullRequest)}
+            {t(getPullRequestStatusKey(pullRequest))}
           </span>
           <span className="text-caption-sm-regular text-tertiary">
-            {pullRequest.commits.length} commit{pullRequest.commits.length === 1 ? "" : "s"}
+            {t("issue.development.count.commit", { count: pullRequest.commits.length })}
           </span>
           <ExternalLink className="size-3 text-tertiary" />
         </div>
@@ -151,6 +153,7 @@ const PullRequestRow = (props: { isMobile: boolean; pullRequest: TIssueGitHubPul
 
 const GitHubDevelopmentLinks = (props: TGitHubDevelopmentLinks) => {
   const { developmentLinks } = props;
+  const { t } = useTranslation();
   const { isMobile } = usePlatformOS();
   const pullRequests = developmentLinks?.pull_requests ?? [];
   const commits = developmentLinks?.commits ?? [];
@@ -163,17 +166,17 @@ const GitHubDevelopmentLinks = (props: TGitHubDevelopmentLinks) => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <GitPullRequest className="size-3.5 text-tertiary" />
-          <span className="text-body-xs-medium text-secondary">Development</span>
+          <span className="text-body-xs-medium text-secondary">{t("issue.development.title")}</span>
         </div>
         <span className="text-caption-sm-regular text-tertiary">
-          {pullRequests.length} PR{pullRequests.length === 1 ? "" : "s"} / {commitCount} commit
-          {commitCount === 1 ? "" : "s"}
+          {t("issue.development.count.pr", { count: pullRequests.length })} /{" "}
+          {t("issue.development.count.commit", { count: commitCount })}
         </span>
       </div>
 
       {pullRequests.length > 0 && (
         <div className="flex flex-col gap-1.5">
-          <span className="text-caption-sm-medium text-tertiary uppercase">Pull requests</span>
+          <span className="text-caption-sm-medium text-tertiary uppercase">{t("issue.development.pull_requests")}</span>
           {pullRequests.map((pullRequest) => (
             <PullRequestRow key={pullRequest.id} pullRequest={pullRequest} isMobile={isMobile} />
           ))}
@@ -182,7 +185,7 @@ const GitHubDevelopmentLinks = (props: TGitHubDevelopmentLinks) => {
 
       {commits.length > 0 && (
         <div className="flex flex-col gap-1.5">
-          <span className="text-caption-sm-medium text-tertiary uppercase">Commits</span>
+          <span className="text-caption-sm-medium text-tertiary uppercase">{t("issue.development.commits")}</span>
           {commits.map((commit) => (
             <CommitRow key={commit.id} commit={commit} isMobile={isMobile} />
           ))}
