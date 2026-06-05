@@ -688,7 +688,7 @@ class TestGitHubIntegration:
 
         response = session_client.get(
             f"/api/workspaces/{workspace.slug}/projects/{project.id}/workspace-integrations/"
-            f"{workspace_integration.id}/github-repository-sync/?backfill_pr_commits=true"
+            f"{workspace_integration.id}/github-repository-sync/"
         )
 
         assert response.status_code == 200

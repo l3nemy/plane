@@ -514,7 +514,11 @@ def sync_pull_request_webhook(payload: dict, action: str) -> int:
     return link_count
 
 
-def backfill_existing_pull_request_commits(repository_sync: GithubRepositorySync) -> int:
+def backfill_existing_pull_request_commits(
+    repository_sync: GithubRepositorySync,
+    *,
+    only_missing: bool = False,
+) -> int:
     pull_request_links = IssueLink.objects.filter(
         workspace_id=repository_sync.workspace_id,
         project_id=repository_sync.project_id,
@@ -528,6 +532,15 @@ def backfill_existing_pull_request_commits(repository_sync: GithubRepositorySync
         metadata = pull_request_link.metadata or {}
         pull_request_number = metadata.get("number")
         if not pull_request_number:
+            continue
+
+        if only_missing and IssueLink.objects.filter(
+            issue=pull_request_link.issue,
+            metadata__source="github",
+            metadata__type="commit",
+            metadata__repository_id=repository_sync.repository.repository_id,
+            metadata__link_source__in=["pull_request", "pull_request_backfill"],
+        ).exists():
             continue
 
         pull_request = {
@@ -949,9 +962,9 @@ class GitHubRepositorySyncEndpoint(BaseAPIView):
             workspace_integration__integration__provider="github",
         ).select_related("repository")
 
-        if request.GET.get("backfill_pr_commits") in ["1", "true", "True"]:
-            for repository_sync in repository_syncs:
-                backfill_existing_pull_request_commits(repository_sync)
+        backfill_pr_commits = request.GET.get("backfill_pr_commits") in ["1", "true", "True"]
+        for repository_sync in repository_syncs:
+            backfill_existing_pull_request_commits(repository_sync, only_missing=not backfill_pr_commits)
 
         serializer = GithubRepositorySyncSerializer(repository_syncs, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
