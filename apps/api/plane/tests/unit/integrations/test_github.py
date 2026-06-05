@@ -458,7 +458,7 @@ class TestGitHubIntegration:
                     "sha": "bbb222",
                     "html_url": "https://github.com/makeplane/plane/commit/bbb222",
                     "commit": {
-                        "message": "connect TP-2 from a PR commit",
+                        "message": "connect TP-2 from a PR commit\n\nwith a longer body",
                         "committer": {
                             "date": "2026-06-01T01:00:00Z",
                         },
@@ -570,6 +570,12 @@ class TestGitHubIntegration:
             metadata__type="commit",
             metadata__sha="bbb222",
         ).count() == 1
+        second_issue_commit_link = IssueLink.objects.get(
+            issue=second_issue,
+            metadata__type="commit",
+            metadata__sha="bbb222",
+        )
+        assert second_issue_commit_link.title == "bbb222: connect TP-2 from a PR commit"
         assert not IssueLink.objects.filter(
             issue=second_issue,
             metadata__type="commit",
@@ -685,6 +691,22 @@ class TestGitHubIntegration:
             workspace=workspace,
             created_by=workspace_integration.actor,
         )
+        IssueLink.objects.create(
+            issue=first_issue,
+            title="GitHub commit aaa111",
+            url="https://github.com/makeplane/plane/commit/aaa111",
+            metadata={
+                "source": "github",
+                "type": "commit",
+                "link_source": "pull_request_backfill",
+                "repository_id": 100,
+                "repository": "makeplane/plane",
+                "sha": "aaa111",
+            },
+            project=project,
+            workspace=workspace,
+            created_by=workspace_integration.actor,
+        )
 
         response = session_client.get(
             f"/api/workspaces/{workspace.slug}/projects/{project.id}/workspace-integrations/"
@@ -696,6 +718,11 @@ class TestGitHubIntegration:
             issue=first_issue,
             metadata__type="commit",
         ).count() == 2
+        assert IssueLink.objects.get(
+            issue=first_issue,
+            metadata__type="commit",
+            metadata__sha="aaa111",
+        ).title == "aaa111: prepare github sync"
         assert IssueLink.objects.filter(
             issue=second_issue,
             metadata__type="pull_request",

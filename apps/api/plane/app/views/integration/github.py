@@ -230,6 +230,22 @@ def get_github_commit_message(commit: dict) -> str:
     return str(commit.get("message") or commit_detail.get("message") or "")
 
 
+def get_github_commit_title(commit: dict) -> str:
+    commit_sha = get_github_commit_sha(commit)
+    commit_lines = get_github_commit_message(commit).splitlines()
+    commit_subject = ""
+
+    for commit_line in commit_lines:
+        commit_subject = " ".join(commit_line.split())
+        if commit_subject:
+            break
+
+    if commit_subject:
+        return f"{commit_sha[:7]}: {commit_subject}"[:255]
+
+    return f"GitHub commit {commit_sha[:7]}"
+
+
 def get_github_commit_url(commit: dict) -> str:
     return str(commit.get("html_url") or commit.get("url") or "")
 
@@ -261,7 +277,7 @@ def sync_github_commit_link(
     return sync_github_issue_link(
         issue=issue,
         repository_sync=repository_sync,
-        title=f"GitHub commit {commit_sha[:7]}",
+        title=get_github_commit_title(commit),
         url=commit_url,
         metadata={
             "source": "github",
@@ -534,13 +550,18 @@ def backfill_existing_pull_request_commits(
         if not pull_request_number:
             continue
 
-        if only_missing and IssueLink.objects.filter(
+        pull_request_commit_links = IssueLink.objects.filter(
             issue=pull_request_link.issue,
             metadata__source="github",
             metadata__type="commit",
             metadata__repository_id=repository_sync.repository.repository_id,
             metadata__link_source__in=["pull_request", "pull_request_backfill"],
-        ).exists():
+        )
+        if (
+            only_missing
+            and pull_request_commit_links.exists()
+            and not pull_request_commit_links.filter(title__startswith="GitHub commit ").exists()
+        ):
             continue
 
         pull_request = {
