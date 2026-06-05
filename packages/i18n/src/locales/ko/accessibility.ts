@@ -27,7 +27,7 @@ export default {
       close_project_menu: "프로젝트 메뉴 닫기",
       collapse_sidebar: "사이드바 축소",
       expand_sidebar: "사이드바 확장",
-      edition_badge: "유료 플랜 모달 열기",
+      edition_badge: "Show community edition version",
     },
     auth_forms: {
       clear_email: "이메일 지우기",

@@ -27,7 +27,6 @@ export * from "./metadata";
 export * from "./module";
 export * from "./notification";
 export * from "./page";
-export * from "./payment";
 export * from "./profile";
 export * from "./project";
 export * from "./rich-filters";

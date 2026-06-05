@@ -21,8 +21,6 @@ export default {
     intake: "Thu thập",
     drafts: "Bản nháp",
     favorites: "Yêu thích",
-    pro: "Phiên bản Pro",
-    upgrade: "Nâng cấp",
     stickies: "Ghi chú",
   },
   auth: {
@@ -284,7 +282,6 @@ export default {
   active_cycles_description:
     "Theo dõi chu kỳ trên các dự án, theo dõi mục công việc ưu tiên cao và chú ý đến các chu kỳ cần quan tâm.",
   on_demand_snapshots_of_all_your_cycles: "Ảnh chụp nhanh theo yêu cầu của tất cả chu kỳ của bạn",
-  upgrade: "Nâng cấp",
   "10000_feet_view": "Góc nhìn tổng quan về tất cả chu kỳ hoạt động.",
   "10000_feet_view_description":
     "Phóng to tầm nhìn để xem tất cả chu kỳ đang diễn ra trong tất cả dự án cùng một lúc, thay vì xem từng chu kỳ trong mỗi dự án.",
@@ -858,7 +855,6 @@ export default {
     from: "Từ {name}",
     authenticated: "Đã xác thực",
     select: "Chọn",
-    upgrade: "Nâng cấp",
     add_seats: "Thêm vị trí",
     projects: "Dự án",
     workspace: "Không gian làm việc",
@@ -885,10 +881,6 @@ export default {
     member: "Thành viên",
     members: "Thành viên",
     you: "Bạn",
-    upgrade_cta: {
-      higher_subscription: "Nâng cấp lên gói cao hơn",
-      talk_to_sales: "Liên hệ bộ phận bán hàng",
-    },
     category: "Danh mục",
     categories: "Danh mục",
     saving: "Đang lưu",

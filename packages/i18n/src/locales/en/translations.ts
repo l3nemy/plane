@@ -117,7 +117,6 @@ export default {
   active_cycles_description:
     "Monitor cycles across projects, track high-priority work items, and zoom in cycles that need attention.",
   on_demand_snapshots_of_all_your_cycles: "On-demand snapshots of all your cycles",
-  upgrade: "Upgrade",
   "10000_feet_view": "10,000-feet view of all active cycles.",
   "10000_feet_view_description":
     "Zoom out to see running cycles across all your projects at once instead of going from Cycle to Cycle in each project.",
@@ -702,7 +701,6 @@ export default {
     from: "from {name}",
     authenticated: "Authenticated",
     select: "Select",
-    upgrade: "Upgrade",
     add_seats: "Add Seats",
     projects: "Projects",
     workspace: "Workspace",
@@ -729,10 +727,6 @@ export default {
     member: "Member",
     members: "Members",
     you: "You",
-    upgrade_cta: {
-      higher_subscription: "Upgrade to higher subscription",
-      talk_to_sales: "Talk to Sales",
-    },
     category: "Category",
     categories: "Categories",
     saving: "Saving",
@@ -1487,7 +1481,7 @@ export default {
         delete_btn: "Delete this workspace",
         delete_modal: {
           title: "Are you sure you want to delete this workspace?",
-          description: "You have an active trial to one of our paid plans. Please cancel it first to proceed.",
+          description: "Please try again later.",
           dismiss: "Dismiss",
           cancel: "Cancel trial",
           success_title: "Workspace deleted.",
@@ -1532,14 +1526,6 @@ export default {
             invalid: "Email is invalid",
           },
         },
-      },
-      billing_and_plans: {
-        heading: "Billing & Plans",
-        description: "Choose your plan, manage subscriptions, and easily upgrade as your needs grow.",
-        title: "Billing & Plans",
-        current_plan: "Current plan",
-        free_plan: "You are currently using the free plan",
-        view_plans: "View plans",
       },
       exports: {
         heading: "Exports",

@@ -27,7 +27,7 @@ export default {
       close_project_menu: "Закрити меню проєкту",
       collapse_sidebar: "Згорнути бічну панель",
       expand_sidebar: "Розгорнути бічну панель",
-      edition_badge: "Відкрити модал платних планів",
+      edition_badge: "Show community edition version",
     },
     auth_forms: {
       clear_email: "Очистити адресу електронної пошти",

@@ -27,7 +27,7 @@ export default {
       close_project_menu: "Tutup menu proyek",
       collapse_sidebar: "Tutup sidebar",
       expand_sidebar: "Perluas sidebar",
-      edition_badge: "Buka modal paket berbayar",
+      edition_badge: "Show community edition version",
     },
     auth_forms: {
       clear_email: "Hapus email",

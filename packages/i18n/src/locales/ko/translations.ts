@@ -21,8 +21,6 @@ export default {
     intake: "접수",
     drafts: "초안",
     favorites: "즐겨찾기",
-    pro: "프로",
-    upgrade: "업그레이드",
     stickies: "스티키",
   },
   auth: {
@@ -280,7 +278,6 @@ export default {
   active_cycles_description:
     "프로젝트 전반의 주기를 모니터링하고, 고우선 작업 항목을 추적하며, 주의가 필요한 주기를 확대합니다.",
   on_demand_snapshots_of_all_your_cycles: "모든 주기의 주문형 스냅샷",
-  upgrade: "업그레이드",
   "10000_feet_view": "10,000피트 뷰",
   "10000_feet_view_description": "모든 프로젝트의 주기를 한 번에 확인할 수 있습니다.",
   get_snapshot_of_each_active_cycle: "각 활성 주기의 스냅샷을 얻으세요.",
@@ -845,7 +842,6 @@ export default {
     from: "{name}에서",
     authenticated: "인증됨",
     select: "선택",
-    upgrade: "업그레이드",
     add_seats: "좌석 추가",
     projects: "프로젝트",
     workspace: "작업 공간",
@@ -872,10 +868,6 @@ export default {
     member: "멤버",
     members: "멤버",
     you: "나",
-    upgrade_cta: {
-      higher_subscription: "더 높은 구독으로 업그레이드",
-      talk_to_sales: "영업팀과 상담",
-    },
     category: "카테고리",
     categories: "카테고리",
     saving: "저장 중",

@@ -27,7 +27,7 @@ export default {
       close_project_menu: "Zavřít menu projektu",
       collapse_sidebar: "Sbalit postranní panel",
       expand_sidebar: "Rozbalit postranní panel",
-      edition_badge: "Otevřít modal placených plánů",
+      edition_badge: "Show community edition version",
     },
     auth_forms: {
       clear_email: "Vymazat e-mail",

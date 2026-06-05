@@ -21,8 +21,6 @@ export default {
     intake: "Entrada",
     drafts: "Borradores",
     favorites: "Favoritos",
-    pro: "Pro",
-    upgrade: "Mejorar",
     stickies: "Notas adhesivas",
   },
   auth: {
@@ -287,7 +285,6 @@ export default {
   active_cycles_description:
     "Monitorea ciclos en todos los proyectos, rastrea elementos de trabajo de alta prioridad y enfócate en los ciclos que necesitan atención.",
   on_demand_snapshots_of_all_your_cycles: "Instantáneas bajo demanda de todos tus ciclos",
-  upgrade: "Actualizar",
   "10000_feet_view": "Vista panorámica de todos los ciclos activos.",
   "10000_feet_view_description":
     "Aléjate para ver los ciclos en ejecución en todos tus proyectos a la vez en lugar de ir de Ciclo en Ciclo en cada proyecto.",
@@ -864,7 +861,6 @@ export default {
     from: "de {name}",
     authenticated: "Autenticado",
     select: "Seleccionar",
-    upgrade: "Mejorar",
     add_seats: "Agregar asientos",
     projects: "Proyectos",
     workspace: "Espacio de trabajo",
@@ -891,10 +887,6 @@ export default {
     member: "Miembro",
     members: "Miembros",
     you: "Tú",
-    upgrade_cta: {
-      higher_subscription: "Mejorar a una suscripción más alta",
-      talk_to_sales: "Hablar con ventas",
-    },
     category: "Categoría",
     categories: "Categorías",
     saving: "Guardando",

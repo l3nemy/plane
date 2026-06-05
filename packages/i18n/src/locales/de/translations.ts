@@ -21,8 +21,6 @@ export default {
     intake: "Eingang",
     drafts: "Entwürfe",
     favorites: "Favoriten",
-    pro: "Pro",
-    upgrade: "Upgrade",
     stickies: "Notizen",
   },
   auth: {
@@ -288,7 +286,6 @@ export default {
   active_cycles_description:
     "Verfolgen Sie Zyklen in allen Projekten, überwachen Sie hochpriorisierte Arbeitselemente und konzentrieren Sie sich auf Zyklen, die Aufmerksamkeit erfordern.",
   on_demand_snapshots_of_all_your_cycles: "Snapshots aller Ihrer Zyklen auf Abruf",
-  upgrade: "Upgrade",
   "10000_feet_view": "Überblick aus 10.000 Fuß über alle aktiven Zyklen.",
   "10000_feet_view_description":
     "Verschaffen Sie sich einen Überblick über alle laufenden Zyklen in allen Projekten auf einmal, anstatt zwischen den Zyklen in jedem Projekt zu wechseln.",
@@ -864,7 +861,6 @@ export default {
     from: "von {name}",
     authenticated: "Authentifiziert",
     select: "Auswählen",
-    upgrade: "Upgrade",
     add_seats: "Sitze hinzufügen",
     projects: "Projekte",
     workspace: "Arbeitsbereich",
@@ -891,10 +887,6 @@ export default {
     member: "Mitglied",
     members: "Mitglieder",
     you: "Sie",
-    upgrade_cta: {
-      higher_subscription: "Auf ein höheres Abonnement upgraden",
-      talk_to_sales: "Mit Vertrieb sprechen",
-    },
     category: "Kategorie",
     categories: "Kategorien",
     saving: "Wird gespeichert",

@@ -27,7 +27,7 @@ export default {
       close_project_menu: "Đóng menu dự án",
       collapse_sidebar: "Thu gọn thanh bên",
       expand_sidebar: "Mở rộng thanh bên",
-      edition_badge: "Mở modal gói trả phí",
+      edition_badge: "Show community edition version",
     },
     auth_forms: {
       clear_email: "Xóa email",

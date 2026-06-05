@@ -21,8 +21,6 @@ export default {
     intake: "インテーク",
     drafts: "下書き",
     favorites: "お気に入り",
-    pro: "プロ",
-    upgrade: "アップグレード",
     stickies: "付箋",
   },
   auth: {
@@ -282,7 +280,6 @@ export default {
   active_cycles_description:
     "プロジェクト全体のサイクルを監視し、優先度の高い作業項目を追跡し、注意が必要なサイクルにズームインします。",
   on_demand_snapshots_of_all_your_cycles: "すべてのサイクルのオンデマンドスナップショット",
-  upgrade: "アップグレード",
   "10000_feet_view": "すべてのアクティブサイクルの俯瞰図",
   "10000_feet_view_description":
     "各プロジェクトのサイクル間を移動する代わりに、すべてのプロジェクトの実行中のサイクルを一度に確認できます。",
@@ -850,7 +847,6 @@ export default {
     from: "{name}から",
     authenticated: "認証済み",
     select: "選択",
-    upgrade: "アップグレード",
     add_seats: "シートを追加",
     projects: "プロジェクト",
     workspace: "ワークスペース",
@@ -877,10 +873,6 @@ export default {
     member: "メンバー",
     members: "メンバー",
     you: "あなた",
-    upgrade_cta: {
-      higher_subscription: "高いサブスクリプションにアップグレード",
-      talk_to_sales: "トーク トゥ セールス",
-    },
     category: "カテゴリー",
     categories: "カテゴリーズ",
     saving: "セービング",

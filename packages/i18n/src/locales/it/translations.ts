@@ -21,8 +21,6 @@ export default {
     intake: "Intake",
     drafts: "Bozze",
     favorites: "Preferiti",
-    pro: "Pro",
-    upgrade: "Aggiorna",
     stickies: "Stickies",
   },
   auth: {
@@ -284,7 +282,6 @@ export default {
   active_cycles_description:
     "Monitora i cicli attraverso i progetti, segui gli elementi di lavoro ad alta priorità e analizza i cicli che necessitano attenzione.",
   on_demand_snapshots_of_all_your_cycles: "Snapshot on-demand di tutti i tuoi cicli",
-  upgrade: "Aggiorna",
   "10000_feet_view": "Vista panoramica (10.000 piedi) di tutti i cicli attivi.",
   "10000_feet_view_description":
     "Effettua uno zoom indietro per vedere i cicli in esecuzione in tutti i tuoi progetti contemporaneamente, invece di passare da un ciclo all'altro in ogni progetto.",
@@ -853,7 +850,6 @@ export default {
     from: "da {name}",
     authenticated: "Autenticato",
     select: "Seleziona",
-    upgrade: "Aggiorna",
     add_seats: "Aggiungi postazioni",
     label: "Etichetta",
     priorities: "Priorità",
@@ -882,10 +878,6 @@ export default {
     member: "Membro",
     members: "Membri",
     you: "Tu",
-    upgrade_cta: {
-      higher_subscription: "Passa a un abbonamento superiore",
-      talk_to_sales: "Parla con le vendite",
-    },
     category: "Categoria",
     categories: "Categorie",
     saving: "Salvataggio in corso",

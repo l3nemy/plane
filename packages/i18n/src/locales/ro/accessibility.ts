@@ -27,7 +27,7 @@ export default {
       close_project_menu: "Închide meniul proiectului",
       collapse_sidebar: "Restrânge bara laterală",
       expand_sidebar: "Extinde bara laterală",
-      edition_badge: "Deschide modalul planurilor plătite",
+      edition_badge: "Show community edition version",
     },
     auth_forms: {
       clear_email: "Șterge e-mailul",

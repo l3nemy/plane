@@ -21,8 +21,6 @@ export default {
     intake: "Talep",
     drafts: "Taslaklar",
     favorites: "Favoriler",
-    pro: "Pro",
-    upgrade: "Yükselt",
     stickies: "Yapışkan notlar",
   },
   auth: {
@@ -284,7 +282,6 @@ export default {
   active_cycles_description:
     "Projeler arasında döngüleri izleyin, yüksek öncelikli iş öğelerini takip edin ve dikkat gerektiren döngülere odaklanın.",
   on_demand_snapshots_of_all_your_cycles: "Tüm döngülerinizin anlık görüntüleri",
-  upgrade: "Yükselt",
   "10000_feet_view": "Tüm aktif döngülerin genel görünümü",
   "10000_feet_view_description":
     "Her projede tek tek dolaşmak yerine, tüm projelerinizdeki çalışan döngüleri bir arada görün.",
@@ -854,7 +851,6 @@ export default {
     from: "{name} kaynaklı",
     authenticated: "Kimliği doğrulandı",
     select: "Seç",
-    upgrade: "Yükselt",
     add_seats: "Koltuk Ekle",
     projects: "Projeler",
     workspace: "Çalışma Alanı",
@@ -881,10 +877,6 @@ export default {
     member: "Üye",
     members: "Üyeler",
     you: "Siz",
-    upgrade_cta: {
-      higher_subscription: "Daha yüksek aboneliğe yükselt",
-      talk_to_sales: "Satış Ekibiyle Görüş",
-    },
     category: "Kategori",
     categories: "Kategoriler",
     saving: "Kaydediliyor",

@@ -61,24 +61,4 @@ export class CycleAnalyticsService extends APIService {
         throw err?.response?.data;
       });
   }
-
-  /**
-   * Retrieves advanced progress data for active cycles (Pro feature).
-   * @param {string} workspaceSlug - The workspace identifier
-   * @param {string} projectId - The project identifier
-   * @param {string} cycleId - The cycle identifier
-   * @returns {Promise<TProgressSnapshot>} The detailed cycle progress data
-   * @throws {Error} If the request fails
-   */
-  async workspaceActiveCyclesProgressPro(
-    workspaceSlug: string,
-    projectId: string,
-    cycleId: string
-  ): Promise<TProgressSnapshot> {
-    return this.get(`/api/workspaces/${workspaceSlug}/projects/${projectId}/cycles/${cycleId}/cycle-progress/`)
-      .then((res) => res?.data)
-      .catch((err) => {
-        throw err?.response?.data;
-      });
-  }
 }

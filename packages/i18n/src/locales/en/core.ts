@@ -21,8 +21,6 @@ export default {
     intake: "Intake",
     drafts: "Drafts",
     favorites: "Favorites",
-    pro: "Pro",
-    upgrade: "Upgrade",
     stickies: "Stickies",
   },
 

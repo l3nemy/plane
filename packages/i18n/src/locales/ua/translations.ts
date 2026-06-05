@@ -22,8 +22,6 @@ export default {
     intake: "Надходження",
     drafts: "Чернетки",
     favorites: "Вибране",
-    pro: "Pro",
-    upgrade: "Підвищити",
   },
   auth: {
     common: {
@@ -290,7 +288,6 @@ export default {
   active_cycles_description:
     "Відстежуйте цикли між проєктами, слідкуйте за пріоритетними робочими одиницями та звертайте увагу на цикли, які потребують втручання.",
   on_demand_snapshots_of_all_your_cycles: "Знімки всіх ваших циклів на вимогу",
-  upgrade: "Підвищити",
   "10000_feet_view": "Огляд з висоти 10 000 футів для всіх активних циклів.",
   "10000_feet_view_description":
     "Переглядайте всі поточні цикли у різних проєктах одночасно, замість перемикання між ними в кожному проєкті.",
@@ -865,7 +862,6 @@ export default {
     from: "від {name}",
     authenticated: "Автентифіковано",
     select: "Вибрати",
-    upgrade: "Підвищити",
     add_seats: "Додати місця",
     projects: "Проєкти",
     workspace: "Робочий простір",
@@ -892,10 +888,6 @@ export default {
     member: "Учасник",
     members: "Учасники",
     you: "Ви",
-    upgrade_cta: {
-      higher_subscription: "Підвищити до вищого плану",
-      talk_to_sales: "Зв’язатися з відділом продажів",
-    },
     category: "Категорія",
     categories: "Категорії",
     saving: "Збереження",
@@ -1691,14 +1683,6 @@ export default {
             invalid: "Неправильна адреса електронної пошти",
           },
         },
-      },
-      billing_and_plans: {
-        heading: "Платежі та плани",
-        description: "Оберіть план, керуйте підписками та легко оновлюйте їх відповідно до ваших потреб.",
-        title: "Платежі та плани",
-        current_plan: "Поточний план",
-        free_plan: "Ви використовуєте безкоштовний план",
-        view_plans: "Переглянути плани",
       },
       exports: {
         heading: "Експорти",

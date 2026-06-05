@@ -21,8 +21,6 @@ export default {
     intake: "Příjem",
     drafts: "Koncepty",
     favorites: "Oblíbené",
-    pro: "Pro",
-    upgrade: "Upgrade",
     stickies: "Poznámky",
   },
   auth: {
@@ -283,7 +281,6 @@ export default {
   active_cycles_description:
     "Sledujte cykly napříč projekty, monitorujte vysoce prioritní pracovní položky a zaměřte se na cykly vyžadující pozornost.",
   on_demand_snapshots_of_all_your_cycles: "Snapshots všech vašich cyklů na vyžádání",
-  upgrade: "Upgradovat",
   "10000_feet_view": "Pohled z 10 000 stop na všechny aktivní cykly.",
   "10000_feet_view_description":
     "Přibližte si všechny běžící cykly napříč všemi projekty najednou, místo přepínání mezi cykly v každém projektu.",
@@ -850,7 +847,6 @@ export default {
     from: "od {name}",
     authenticated: "Ověřeno",
     select: "Vybrat",
-    upgrade: "Upgradovat",
     add_seats: "Přidat místa",
     projects: "Projekty",
     workspace: "Pracovní prostor",
@@ -877,10 +873,6 @@ export default {
     member: "Člen",
     members: "Členové",
     you: "Vy",
-    upgrade_cta: {
-      higher_subscription: "Upgradovat na vyšší předplatné",
-      talk_to_sales: "Promluvte si s prodejem",
-    },
     category: "Kategorie",
     categories: "Kategorie",
     saving: "Ukládání",

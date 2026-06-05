@@ -27,7 +27,7 @@ export default {
       close_project_menu: "プロジェクトメニューを閉じる",
       collapse_sidebar: "サイドバーを折りたたむ",
       expand_sidebar: "サイドバーを展開",
-      edition_badge: "有料プランのモーダルを開く",
+      edition_badge: "Show community edition version",
     },
     auth_forms: {
       clear_email: "メールをクリア",

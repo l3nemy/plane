@@ -71,7 +71,6 @@ export interface ICycleStore {
   fetchArchivedCycleDetails: (workspaceSlug: string, projectId: string, cycleId: string) => Promise<ICycle>;
   fetchCycleDetails: (workspaceSlug: string, projectId: string, cycleId: string) => Promise<ICycle>;
   fetchActiveCycleProgress: (workspaceSlug: string, projectId: string, cycleId: string) => Promise<TProgressSnapshot>;
-  fetchActiveCycleProgressPro: (workspaceSlug: string, projectId: string, cycleId: string) => Promise<void>;
   fetchActiveCycleAnalytics: (
     workspaceSlug: string,
     projectId: string,
@@ -494,16 +493,6 @@ export class CycleStore implements ICycleStore {
   };
 
   /**
-   * @description fetches active cycle progress for pro users
-   * @param workspaceSlug
-   * @param projectId
-   * @param cycleId
-   *  @returns
-   */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  fetchActiveCycleProgressPro = action(async (workspaceSlug: string, projectId: string, cycleId: string) => {});
-
-  /**
    * @description fetches active cycle analytics
    * @param workspaceSlug
    * @param projectId
@@ -624,6 +613,7 @@ export class CycleStore implements ICycleStore {
         delete this.activeCycleIdMap[cycleId];
         if (this.rootStore.favorite.entityMap[cycleId]) this.rootStore.favorite.removeFavoriteFromStore(cycleId);
       });
+      return undefined;
     });
 
   /**
@@ -695,6 +685,7 @@ export class CycleStore implements ICycleStore {
           set(this.cycleMap, [cycleId, "archived_at"], response.archived_at);
           if (this.rootStore.favorite.entityMap[cycleId]) this.rootStore.favorite.removeFavoriteFromStore(cycleId);
         });
+        return undefined;
       })
       .catch((error) => {
         console.error("Failed to archive cycle in cycle store", error);
@@ -717,6 +708,7 @@ export class CycleStore implements ICycleStore {
         runInAction(() => {
           set(this.cycleMap, [cycleId, "archived_at"], null);
         });
+        return undefined;
       })
       .catch((error) => {
         console.error("Failed to restore cycle in cycle store", error);

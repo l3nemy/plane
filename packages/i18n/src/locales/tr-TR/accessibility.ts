@@ -27,7 +27,7 @@ export default {
       close_project_menu: "Proje menüsünü kapat",
       collapse_sidebar: "Kenar çubuğunu daralt",
       expand_sidebar: "Kenar çubuğunu genişlet",
-      edition_badge: "Ücretli planlar modalını aç",
+      edition_badge: "Show community edition version",
     },
     auth_forms: {
       clear_email: "E-postayı temizle",

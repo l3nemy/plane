@@ -21,8 +21,6 @@ export default {
     intake: "Cereri",
     drafts: "Schițe",
     favorites: "Favorite",
-    pro: "Pro",
-    upgrade: "Treci la versiunea superioară",
     stickies: "Notițe",
   },
   auth: {
@@ -284,7 +282,6 @@ export default {
   active_cycles_description:
     "Monitorizează ciclurile din proiecte, urmărește activitățile prioritare și focalizează-te pe ciclurile care necesită atenție.",
   on_demand_snapshots_of_all_your_cycles: "Instantanee la cerere ale tuturor ciclurilor tale",
-  upgrade: "Treci la o versiune superioră",
   "10000_feet_view": "Vedere de ansamblu asupra tuturor ciclurilor active.",
   "10000_feet_view_description":
     "Vezi în ansamblu și simultan toate ciclurile active din proiectele tale, fără a naviga individual la fiecare ciclu.",
@@ -857,7 +854,6 @@ export default {
     from: "de la {name}",
     authenticated: "Autentificat",
     select: "Selectează",
-    upgrade: "Treci la o versiune superioră",
     add_seats: "Adaugă locuri",
     projects: "Proiecte",
     workspace: "Spațiu de lucru",
@@ -884,10 +880,6 @@ export default {
     member: "Membru",
     members: "Membri",
     you: "Tu",
-    upgrade_cta: {
-      higher_subscription: "Treci la un abonament superior",
-      talk_to_sales: "Discută cu vânzările",
-    },
     category: "Categorie",
     categories: "Categorii",
     saving: "Se salvează",

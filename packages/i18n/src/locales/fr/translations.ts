@@ -21,8 +21,6 @@ export default {
     intake: "Intake",
     drafts: "Brouillons",
     favorites: "Favoris",
-    pro: "Pro",
-    upgrade: "Mettre à niveau",
     stickies: "Post-it",
   },
   auth: {
@@ -285,7 +283,6 @@ export default {
   active_cycles_description:
     "Surveillez les cycles à travers les projets, suivez les éléments de travail prioritaires et zoomez sur les cycles qui nécessitent votre attention.",
   on_demand_snapshots_of_all_your_cycles: "Instantanés à la demande de tous vos cycles",
-  upgrade: "Mettre à niveau",
   "10000_feet_view": "Vue à 10 000 pieds de tous les cycles actifs.",
   "10000_feet_view_description":
     "Dézoomez pour voir les cycles en cours dans tous vos projets en même temps au lieu de passer d’un cycle à l’autre dans chaque projet.",
@@ -862,7 +859,6 @@ export default {
     from: "de {name}",
     authenticated: "Authentifié",
     select: "Sélectionner",
-    upgrade: "Mettre à niveau",
     add_seats: "Ajouter des sièges",
     projects: "Projets",
     workspace: "Espace de travail",
@@ -889,10 +885,6 @@ export default {
     member: "Membre",
     members: "Membres",
     you: "Vous",
-    upgrade_cta: {
-      higher_subscription: "Passer à un abonnement plus élevé",
-      talk_to_sales: "Contacter le service commercial",
-    },
     category: "Catégorie",
     categories: "Catégories",
     saving: "Enregistrement",

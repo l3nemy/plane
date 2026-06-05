@@ -27,7 +27,7 @@ export default {
       close_project_menu: "Projekt-Menü schließen",
       collapse_sidebar: "Seitenleiste einklappen",
       expand_sidebar: "Seitenleiste ausklappen",
-      edition_badge: "Modal für kostenpflichtige Pläne öffnen",
+      edition_badge: "Show community edition version",
     },
     auth_forms: {
       clear_email: "E-Mail löschen",

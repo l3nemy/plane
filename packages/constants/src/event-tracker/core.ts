@@ -4,8 +4,6 @@
  * See the LICENSE file for details.
  */
 
-import type { EProductSubscriptionEnum } from "@plane/types";
-
 /**
  * ===========================================================================
  * Event Groups
@@ -479,8 +477,6 @@ export const PROFILE_SETTINGS_TRACKER_ELEMENTS = {
  * ===========================================================================
  */
 export const WORKSPACE_SETTINGS_TRACKER_EVENTS = {
-  // Billing
-  upgrade_plan_redirected: "upgrade_plan_redirected",
   // Exports
   csv_exported: "csv_exported",
   // Webhooks
@@ -492,9 +488,6 @@ export const WORKSPACE_SETTINGS_TRACKER_EVENTS = {
 };
 
 export const WORKSPACE_SETTINGS_TRACKER_ELEMENTS = {
-  // Billing
-  BILLING_UPGRADE_BUTTON: (subscriptionType: EProductSubscriptionEnum) => `billing_upgrade_${subscriptionType}_button`,
-  BILLING_TALK_TO_SALES_BUTTON: "billing_talk_to_sales_button",
   // Exports
   EXPORT_BUTTON: "export_button",
   // Webhooks

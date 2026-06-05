@@ -27,7 +27,7 @@ export default {
       close_project_menu: "關閉項目選單",
       collapse_sidebar: "摺疊側邊欄",
       expand_sidebar: "展開側邊欄",
-      edition_badge: "打開付費計劃模態框",
+      edition_badge: "Show community edition version",
     },
     auth_forms: {
       clear_email: "清除電子郵件",

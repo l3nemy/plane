@@ -27,7 +27,7 @@ export default {
       close_project_menu: "Закрыть меню проекта",
       collapse_sidebar: "Свернуть боковую панель",
       expand_sidebar: "Развернуть боковую панель",
-      edition_badge: "Открыть модал платных планов",
+      edition_badge: "Show community edition version",
     },
     auth_forms: {
       clear_email: "Очистить email",

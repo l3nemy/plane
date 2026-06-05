@@ -21,8 +21,6 @@ export default {
     intake: "Intake",
     drafts: "Draft",
     favorites: "Favorit",
-    pro: "Pro",
-    upgrade: "Upgrade",
     stickies: "Catatan tempel",
   },
   auth: {
@@ -284,7 +282,6 @@ export default {
   active_cycles_description:
     "Pantau siklus di seluruh proyek, lacak item kerja prioritas tinggi, dan fokus pada siklus yang membutuhkan perhatian.",
   on_demand_snapshots_of_all_your_cycles: "Snapshot sesuai permintaan dari semua siklus Anda",
-  upgrade: "Tingkatkan",
   "10000_feet_view": "Tampilan 10.000 kaki dari semua siklus aktif.",
   "10000_feet_view_description":
     "Perbesar untuk melihat siklus yang berjalan di seluruh proyek Anda sekaligus, bukan berpindah dari Siklus ke Siklus di setiap proyek.",
@@ -855,7 +852,6 @@ export default {
     from: "dari {name}",
     authenticated: "Terautentikasi",
     select: "Pilih",
-    upgrade: "Tingkatkan",
     add_seats: "Tambahkan Kursi",
     projects: "Proyek",
     workspace: "Ruang kerja",
@@ -882,10 +878,6 @@ export default {
     member: "Anggota",
     members: "Anggota",
     you: "Anda",
-    upgrade_cta: {
-      higher_subscription: "Tingkatkan ke langganan yang lebih tinggi",
-      talk_to_sales: "Bicaralah dengan Penjualan",
-    },
     category: "Kategori",
     categories: "Kategori",
     saving: "Menyimpan",

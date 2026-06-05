@@ -26,7 +26,6 @@ import { useAppTheme } from "@/hooks/store/use-app-theme";
 import { useUser, useUserPermissions } from "@/hooks/store/user";
 import { useWorkspaceNavigationPreferences } from "@/hooks/use-navigation-preferences";
 // local imports
-import { UpgradeBadge } from "../upgrade-badge";
 import { getSidebarNavigationItemIcon } from "./helper";
 
 type TExtendedSidebarItemProps = {
@@ -56,7 +55,7 @@ export const ExtendedSidebarItem = observer(function ExtendedSidebarItem(props: 
   const { workspaceSlug } = useParams();
   // store hooks
   const { toggleExtendedSidebar } = useAppTheme();
-  const { data } = useUser();
+  const { data: currentUser } = useUser();
   const { allowPermissions } = useUserPermissions();
   const { preferences: workspacePreferences, toggleWorkspaceItem } = useWorkspaceNavigationPreferences();
 
@@ -66,14 +65,14 @@ export const ExtendedSidebarItem = observer(function ExtendedSidebarItem(props: 
   const handleLinkClick = () => toggleExtendedSidebar(true);
 
   useEffect(() => {
-    const element = navigationIemRef.current;
+    const navigationElement = navigationIemRef.current;
     const dragHandleElement = dragHandleRef.current;
 
-    if (!element) return;
+    if (!navigationElement) return;
 
     return combine(
       draggable({
-        element,
+        element: navigationElement,
         canDrag: () => !disableDrag,
         dragHandle: dragHandleElement ?? undefined,
         getInitialData: () => ({ id: item.key, dragInstanceId: "NAVIGATION" }), // var1
@@ -85,16 +84,16 @@ export const ExtendedSidebarItem = observer(function ExtendedSidebarItem(props: 
         },
       }),
       dropTargetForElements({
-        element,
+        element: navigationElement,
         canDrop: ({ source }) =>
           !disableDrop && source?.data?.id !== item.key && source?.data?.dragInstanceId === "NAVIGATION",
-        getData: ({ input, element }) => {
-          const data = { id: item.key };
+        getData: ({ input, element: targetElement }) => {
+          const navigationData = { id: item.key };
 
           // attach instruction for last in list
-          return attachInstruction(data, {
+          return attachInstruction(navigationData, {
             input,
-            element,
+            element: targetElement,
             currentLevel: 0,
             indentPerLevel: 0,
             mode: isLastChild ? "last-in-group" : "standard",
@@ -136,7 +135,7 @@ export const ExtendedSidebarItem = observer(function ExtendedSidebarItem(props: 
 
   const itemHref =
     item.key === "your_work"
-      ? `/${workspaceSlug.toString()}${item.href}${data?.id}`
+      ? `/${workspaceSlug.toString()}${item.href}${currentUser?.id}`
       : `/${workspaceSlug.toString()}${item.href}`;
   const isActive = itemHref === pathname;
 
@@ -199,11 +198,6 @@ export const ExtendedSidebarItem = observer(function ExtendedSidebarItem(props: 
             </div>
           </Link>
           <div className="flex items-center gap-2">
-            {item.key === "active_cycles" && (
-              <div className="flex-shrink-0">
-                <UpgradeBadge />
-              </div>
-            )}
             {isPinned ? (
               <Tooltip tooltipContent="Unpin">
                 <PinOff

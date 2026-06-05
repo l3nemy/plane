@@ -21,8 +21,6 @@ export default {
     intake: "Zgłoszenia",
     drafts: "Szkice",
     favorites: "Ulubione",
-    pro: "Pro",
-    upgrade: "Uaktualnij",
     stickies: "Notatki",
   },
   auth: {
@@ -282,7 +280,6 @@ export default {
   active_cycles_description:
     "Śledź cykle w różnych projektach, monitoruj elementy o wysokim priorytecie i koncentruj się na cyklach wymagających uwagi.",
   on_demand_snapshots_of_all_your_cycles: "Migawki wszystkich Twoich cykli na żądanie",
-  upgrade: "Uaktualnij",
   "10000_feet_view": "Widok z wysokości 10 000 stóp na wszystkie aktywne cykle.",
   "10000_feet_view_description":
     "Przybliż wszystkie aktywne cykle w różnych projektach bez konieczności przełączania się między nimi.",
@@ -851,7 +848,6 @@ export default {
     from: "od {name}",
     authenticated: "Uwierzytelniono",
     select: "Wybierz",
-    upgrade: "Uaktualnij",
     add_seats: "Dodaj miejsca",
     projects: "Projekty",
     workspace: "Przestrzeń robocza",
@@ -878,10 +874,6 @@ export default {
     member: "Członek",
     members: "Członkowie",
     you: "Ty",
-    upgrade_cta: {
-      higher_subscription: "Uaktualnij do wyższego abonamentu",
-      talk_to_sales: "Skontaktuj się z działem sprzedaży",
-    },
     category: "Kategoria",
     categories: "Kategorie",
     saving: "Zapisywanie",

@@ -21,8 +21,6 @@ export default {
     intake: "Предложения",
     drafts: "Черновики",
     favorites: "Избранное",
-    pro: "Pro",
-    upgrade: "Обновить",
     stickies: "Стикеры",
   },
   auth: {
@@ -289,7 +287,6 @@ export default {
   active_cycles_description:
     "Мониторинг циклов по проектам, отслеживание приоритетных рабочих элементов и фокусировка на проблемных циклах.",
   on_demand_snapshots_of_all_your_cycles: "Моментальные снимки всех ваших циклов",
-  upgrade: "Обновить",
   "10000_feet_view": "Обзор всех активных циклов с высоты",
   "10000_feet_view_description":
     "Общий обзор выполняющихся циклов во всех проектах вместо переключения между циклами в каждом проекте.",
@@ -864,7 +861,6 @@ export default {
     from: "от {name}",
     authenticated: "Авторизован",
     select: "Выбрать",
-    upgrade: "Обновить",
     add_seats: "Добавить места",
     projects: "Проекты",
     workspace: "Рабочее пространство",
@@ -891,10 +887,6 @@ export default {
     member: "Участник",
     members: "Участники",
     you: "Вы",
-    upgrade_cta: {
-      higher_subscription: "Перейти на подписку выше",
-      talk_to_sales: "Связаться с отделом продаж",
-    },
     category: "Категория",
     categories: "Категории",
     saving: "Сохранение",
@@ -1688,14 +1680,6 @@ export default {
             invalid: "Неверный email",
           },
         },
-      },
-      billing_and_plans: {
-        heading: "Оплата и тарифы",
-        description: "Выберите тариф, управляйте подписками и легко обновляйте их по мере роста потребностей.",
-        title: "Оплата и тарифы",
-        current_plan: "Текущий тариф",
-        free_plan: "Используется бесплатный тариф",
-        view_plans: "Посмотреть тарифы",
       },
       exports: {
         heading: "Экспорт",

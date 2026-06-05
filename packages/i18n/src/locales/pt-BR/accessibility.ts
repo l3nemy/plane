@@ -27,7 +27,7 @@ export default {
       close_project_menu: "Fechar menu do projeto",
       collapse_sidebar: "Recolher barra lateral",
       expand_sidebar: "Expandir barra lateral",
-      edition_badge: "Abrir modal de planos pagos",
+      edition_badge: "Show community edition version",
     },
     auth_forms: {
       clear_email: "Limpar e-mail",
