@@ -72,6 +72,22 @@ WEBHOOK_DISALLOWED_DOMAINS = [
     if _d.strip()
 ]
 
+# Community integration providers — comma-separated dotted paths to provider
+# objects or callables returning CommunityIntegrationProvider instances.
+_community_integration_providers_raw = os.environ.get("COMMUNITY_INTEGRATION_PROVIDERS", "")
+COMMUNITY_INTEGRATION_PROVIDERS = [
+    _provider.strip()
+    for _provider in _community_integration_providers_raw.split(",")
+    if _provider.strip()
+]
+
+# GitHub App integration credentials. These are used by the community GitHub
+# integration, not by GitHub OAuth login.
+GITHUB_APP_ID = os.environ.get("GITHUB_APP_ID", "")
+GITHUB_APP_PRIVATE_KEY = os.environ.get("GITHUB_APP_PRIVATE_KEY", "")
+GITHUB_APP_PRIVATE_KEY_FILE = os.environ.get("GITHUB_APP_PRIVATE_KEY_FILE", "")
+GITHUB_WEBHOOK_SECRET = os.environ.get("GITHUB_WEBHOOK_SECRET", "")
+
 # Allowed Hosts
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "*").split(",")
 

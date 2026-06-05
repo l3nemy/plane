@@ -408,6 +408,64 @@ class AccountEndpoint(BaseAPIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+class GitHubAccountEndpoint(BaseAPIView):
+    def get(self, request):
+        account = Account.objects.filter(user=request.user, provider="github").first()
+        if not account:
+            return Response(status=status.HTTP_204_NO_CONTENT)
+
+        serializer = AccountSerializer(account)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request):
+        github_id = request.data.get("github_id") or request.data.get("provider_account_id")
+        github_login = request.data.get("login") or request.data.get("username")
+
+        if not github_id or not github_login:
+            return Response(
+                {"error": "github_id and login are required."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        account_with_github_id = Account.objects.filter(
+            provider="github",
+            provider_account_id=str(github_id),
+        ).first()
+        if account_with_github_id and account_with_github_id.user_id != request.user.id:
+            return Response(
+                {"error": "This GitHub account is already connected to another user."},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        account = Account.objects.filter(user=request.user, provider="github").first()
+        metadata = {
+            "login": str(github_login),
+            "html_url": request.data.get("html_url"),
+            "avatar_url": request.data.get("avatar_url"),
+        }
+
+        if account:
+            account.provider_account_id = str(github_id)
+            account.access_token = request.data.get("access_token") or account.access_token or ""
+            account.metadata = {
+                **(account.metadata or {}),
+                **metadata,
+            }
+            account.last_connected_at = timezone.now()
+            account.save(update_fields=["provider_account_id", "access_token", "metadata", "last_connected_at"])
+        else:
+            account = Account.objects.create(
+                user=request.user,
+                provider="github",
+                provider_account_id=str(github_id),
+                access_token=request.data.get("access_token") or "",
+                metadata=metadata,
+            )
+
+        serializer = AccountSerializer(account)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 class ProfileEndpoint(BaseAPIView):
     @method_decorator(cache_control(private=True, max_age=12))
     @method_decorator(vary_on_cookie)

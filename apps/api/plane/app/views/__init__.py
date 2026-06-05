@@ -184,6 +184,17 @@ from .external.base import (
     UnsplashEndpoint,
     WorkspaceGPTIntegrationEndpoint,
 )
+from .integration.base import (
+    IntegrationEndpoint,
+    WorkspaceIntegrationEndpoint,
+    WorkspaceIntegrationProviderEndpoint,
+)
+from .integration.github import (
+    GitHubInstallationCallbackEndpoint,
+    GitHubRepositoriesEndpoint,
+    GitHubRepositorySyncEndpoint,
+    GitHubWebhookEndpoint,
+)
 from .estimate.base import (
     ProjectEstimatePointEndpoint,
     BulkEstimatePointEndpoint,
@@ -235,6 +246,6 @@ from .webhook.base import (
 from .error_404 import custom_404_view
 
 from .notification.base import MarkAllReadNotificationViewSet
-from .user.base import AccountEndpoint, ProfileEndpoint, UserSessionEndpoint
+from .user.base import AccountEndpoint, GitHubAccountEndpoint, ProfileEndpoint, UserSessionEndpoint
 
 from .timezone.base import TimezoneEndpoint

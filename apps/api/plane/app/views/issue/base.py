@@ -5,6 +5,7 @@
 # Python imports
 import copy
 import json
+import logging
 
 # Django imports
 from django.contrib.postgres.aggregates import ArrayAgg
@@ -40,13 +41,20 @@ from plane.app.serializers import (
     IssueSerializer,
     ProjectUserPropertySerializer,
 )
+from plane.app.integrations.github import (
+    GitHubAppAPIError,
+    GitHubAppConfigurationError,
+    update_github_issue_assignees,
+)
 from plane.bgtasks.issue_activities_task import issue_activity
 from plane.bgtasks.issue_description_version_task import issue_description_version_task
 from plane.bgtasks.recent_visited_task import recent_visited_task
 from plane.bgtasks.webhook_task import model_activity
 from plane.db.models import (
+    Account,
     CycleIssue,
     FileAsset,
+    GithubRepositorySync,
     IntakeIssue,
     Issue,
     IssueAssignee,
@@ -75,6 +83,85 @@ from plane.utils.paginator import GroupedOffsetPaginator, SubGroupedOffsetPagina
 from plane.utils.timezone_converter import user_timezone_converter
 
 from .. import BaseAPIView, BaseViewSet
+
+
+logger = logging.getLogger(__name__)
+
+
+def get_github_installation_id(workspace_integration) -> int | None:
+    installation_id = (workspace_integration.config or {}).get("installation_id") or (
+        workspace_integration.metadata or {}
+    ).get("installation_id")
+
+    if not installation_id:
+        return None
+
+    return int(installation_id)
+
+
+def get_issue_github_assignee_logins(issue: Issue) -> list[str]:
+    assignee_ids = IssueAssignee.objects.filter(issue=issue).values_list("assignee_id", flat=True)
+    accounts = Account.objects.filter(provider="github", user_id__in=assignee_ids).select_related("user")
+    logins = []
+
+    for account in accounts:
+        login = (account.metadata or {}).get("login")
+        if login and login not in logins:
+            logins.append(login)
+
+    return logins
+
+
+def sync_plane_assignees_to_github(issue: Issue) -> None:
+    assignee_logins = get_issue_github_assignee_logins(issue)
+    github_links = IssueLink.objects.filter(
+        issue=issue,
+        metadata__source="github",
+        metadata__type__in=["pull_request", "issue"],
+    )
+
+    for github_link in github_links:
+        metadata = github_link.metadata or {}
+        repository_id = metadata.get("repository_id")
+        github_issue_number = metadata.get("number")
+
+        if not repository_id or not github_issue_number:
+            continue
+
+        repository_sync = (
+            GithubRepositorySync.objects.filter(
+                project_id=issue.project_id,
+                repository__repository_id=repository_id,
+            )
+            .select_related("repository", "workspace_integration")
+            .first()
+        )
+
+        if not repository_sync or not repository_sync.repository.config.get("sync_assignees", True):
+            continue
+
+        installation_id = get_github_installation_id(repository_sync.workspace_integration)
+        if not installation_id:
+            continue
+
+        try:
+            update_github_issue_assignees(
+                installation_id=installation_id,
+                owner=repository_sync.repository.owner,
+                repository=repository_sync.repository.name,
+                issue_number=int(github_issue_number),
+                assignees=assignee_logins,
+            )
+        except (GitHubAppAPIError, GitHubAppConfigurationError, ValueError) as exc:
+            logger.warning(
+                "Could not sync Plane issue assignees to GitHub",
+                extra={
+                    "issue_id": str(issue.id),
+                    "github_link_id": str(github_link.id),
+                    "repository_sync_id": str(repository_sync.id),
+                    "error": str(exc),
+                },
+            )
 
 
 class IssueListEndpoint(BaseAPIView):
@@ -666,7 +753,9 @@ class IssueViewSet(BaseViewSet):
         requested_data = json.dumps(self.request.data, cls=DjangoJSONEncoder)
         serializer = IssueCreateSerializer(issue, data=request.data, partial=True, context={"project_id": project_id})
         if serializer.is_valid():
-            serializer.save()
+            updated_issue = serializer.save()
+            if "assignee_ids" in request.data:
+                sync_plane_assignees_to_github(updated_issue)
             # Check if the update is a migration description update
             is_migration_description_update = skip_activity and is_description_update
             # Log all the updates

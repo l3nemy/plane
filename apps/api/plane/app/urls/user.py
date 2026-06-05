@@ -6,6 +6,7 @@ from django.urls import path
 
 from plane.app.views import (
     AccountEndpoint,
+    GitHubAccountEndpoint,
     ProfileEndpoint,
     UpdateUserOnBoardedEndpoint,
     UpdateUserTourCompletedEndpoint,
@@ -49,6 +50,7 @@ urlpatterns = [
     # End profile
     # Accounts
     path("users/me/accounts/", AccountEndpoint.as_view(), name="accounts"),
+    path("users/me/accounts/github/", GitHubAccountEndpoint.as_view(), name="github-account"),
     path("users/me/accounts/<uuid:pk>/", AccountEndpoint.as_view(), name="accounts"),
     ## End Accounts
     path(

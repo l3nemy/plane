@@ -118,6 +118,10 @@ class OauthAdapter(Adapter):
                 account.refresh_token_expired_at = self.token_data.get("refresh_token_expired_at")
                 account.last_connected_at = timezone.now()
                 account.id_token = self.token_data.get("id_token", "")
+                account.metadata = {
+                    **(account.metadata or {}),
+                    **(self.user_data.get("user", {}).get("metadata") or {}),
+                }
                 account.save()
             # Create a new account if it does not exist
             else:
@@ -131,6 +135,7 @@ class OauthAdapter(Adapter):
                     refresh_token_expired_at=self.token_data.get("refresh_token_expired_at"),
                     last_connected_at=timezone.now(),
                     id_token=self.token_data.get("id_token", ""),
+                    metadata=self.user_data.get("user", {}).get("metadata") or {},
                 )
         except (DatabaseError, IntegrityError) as e:
             log_exception(e)

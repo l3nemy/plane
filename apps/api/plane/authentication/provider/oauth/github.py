@@ -179,5 +179,10 @@ class GitHubOAuthProvider(OauthAdapter):
                 "first_name": user_info_response.get("name"),
                 "last_name": user_info_response.get("family_name"),
                 "is_password_autoset": True,
+                "metadata": {
+                    "login": user_info_response.get("login"),
+                    "html_url": user_info_response.get("html_url"),
+                    "avatar_url": user_info_response.get("avatar_url"),
+                },
             },
         })

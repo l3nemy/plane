@@ -93,6 +93,13 @@ from .module import (
 
 from .api import APITokenSerializer, APITokenReadSerializer
 
+from .integration import (
+    GithubRepositorySerializer,
+    GithubRepositorySyncSerializer,
+    IntegrationSerializer,
+    WorkspaceIntegrationSerializer,
+)
+
 from .importer import ImporterSerializer
 
 from .page import (
