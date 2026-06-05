@@ -96,7 +96,7 @@ To ensure consistency throughout the source code, please keep these rules in min
 ## Ways to contribute
 
 - Try Plane Cloud and the self hosting platform and give feedback
-- Add new integrations
+- Add new integrations by following the [Community integrations guide](docs/community-integrations.md)
 - Add or update translations
 - Help with open [issues](https://github.com/makeplane/plane/issues) or [create your own](https://github.com/makeplane/plane/issues/new/choose)
 - Share your thoughts and suggestions with us
