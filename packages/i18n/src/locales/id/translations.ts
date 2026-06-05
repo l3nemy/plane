@@ -630,7 +630,6 @@ export default {
     },
     manage_widgets: "Kelola widget",
     title: "Beranda",
-    star_us_on_github: "Bintang kami di GitHub",
   },
   link: {
     modal: {

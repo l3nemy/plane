@@ -620,7 +620,6 @@ export default {
     },
     manage_widgets: "위젯 관리",
     title: "홈",
-    star_us_on_github: "GitHub에서 별표",
   },
   link: {
     modal: {

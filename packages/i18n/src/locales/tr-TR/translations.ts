@@ -628,7 +628,6 @@ export default {
     },
     manage_widgets: "Widget'ları yönet",
     title: "Ana Sayfa",
-    star_us_on_github: "Bizi GitHub'da yıldızlayın",
   },
   link: {
     modal: {

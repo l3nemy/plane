@@ -639,7 +639,6 @@ export default {
     },
     manage_widgets: "Widgets verwalten",
     title: "Startseite",
-    star_us_on_github: "Geben Sie uns einen Stern auf GitHub",
   },
   link: {
     modal: {

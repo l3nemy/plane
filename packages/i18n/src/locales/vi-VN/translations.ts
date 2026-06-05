@@ -634,7 +634,6 @@ export default {
     },
     manage_widgets: "Quản lý tiện ích",
     title: "Trang chủ",
-    star_us_on_github: "Gắn sao cho chúng tôi trên GitHub",
   },
   link: {
     modal: {

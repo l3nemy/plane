@@ -627,7 +627,6 @@ export default {
     },
     manage_widgets: "Spravovať widgety",
     title: "Domov",
-    star_us_on_github: "Ohodnoťte nás na GitHube",
   },
   link: {
     modal: {

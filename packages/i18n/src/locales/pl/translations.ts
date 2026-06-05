@@ -626,7 +626,6 @@ export default {
     },
     manage_widgets: "Zarządzaj widżetami",
     title: "Strona główna",
-    star_us_on_github: "Oceń nas na GitHubie",
   },
   link: {
     modal: {

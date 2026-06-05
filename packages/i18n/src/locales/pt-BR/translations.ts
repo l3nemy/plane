@@ -637,7 +637,6 @@ export default {
     },
     manage_widgets: "Gerenciar widgets",
     title: "Página inicial",
-    star_us_on_github: "Nos dê uma estrela no GitHub",
   },
   link: {
     modal: {

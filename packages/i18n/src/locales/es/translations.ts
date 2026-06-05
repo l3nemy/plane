@@ -640,7 +640,6 @@ export default {
     },
     manage_widgets: "Gestionar widgets",
     title: "Inicio",
-    star_us_on_github: "Danos una estrella en GitHub",
   },
   link: {
     modal: {

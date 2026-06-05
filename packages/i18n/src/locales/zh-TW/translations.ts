@@ -614,7 +614,6 @@ export default {
     },
     manage_widgets: "管理小工具",
     title: "首頁",
-    star_us_on_github: "在 GitHub 上給我們星星",
   },
   link: {
     modal: {

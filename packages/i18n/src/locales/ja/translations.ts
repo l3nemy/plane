@@ -626,7 +626,6 @@ export default {
     },
     manage_widgets: "ウィジェットを管理",
     title: "ホーム",
-    star_us_on_github: "GitHubでスターをつける",
   },
   link: {
     modal: {

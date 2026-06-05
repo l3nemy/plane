@@ -465,7 +465,6 @@ export default {
     },
     manage_widgets: "Manage widgets",
     title: "Home",
-    star_us_on_github: "Star us on GitHub",
   },
   link: {
     modal: {

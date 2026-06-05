@@ -632,7 +632,6 @@ export default {
     },
     manage_widgets: "Gestionează mini-aplicațiile",
     title: "Acasă",
-    star_us_on_github: "Dă-ne o stea pe GitHub",
   },
   link: {
     modal: {

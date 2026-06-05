@@ -633,7 +633,6 @@ export default {
     },
     manage_widgets: "Gestisci widget",
     title: "Home",
-    star_us_on_github: "Metti una stella su GitHub",
   },
   link: {
     modal: {

@@ -615,7 +615,6 @@ export default {
     },
     manage_widgets: "管理小部件",
     title: "首页",
-    star_us_on_github: "在GitHub上为我们加星",
   },
   link: {
     modal: {

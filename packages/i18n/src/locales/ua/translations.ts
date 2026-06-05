@@ -638,7 +638,6 @@ export default {
     },
     manage_widgets: "Керувати віджетами",
     title: "Головна",
-    star_us_on_github: "Оцініть нас на GitHub",
   },
   link: {
     modal: {
