@@ -20,17 +20,40 @@ on:
 
 permissions:
   contents: read
+  packages: write
 
 concurrency:
   group: fork-ci-cd-${{ github.ref }}
   cancel-in-progress: true
 
 env:
+  GHCR_REGISTRY: ghcr.io
   NODE_VERSION: "22.18.0"
   PNPM_VERSION: "10.32.1"
   PYTHON_VERSION: "3.12"
 
 jobs:
+  version:
+    name: Version
+    runs-on: ubuntu-latest
+    outputs:
+      image_owner: ${{ steps.version.outputs.image_owner }}
+      image_tag: ${{ steps.version.outputs.image_tag }}
+      light_tag: ${{ steps.version.outputs.light_tag }}
+      short_sha: ${{ steps.version.outputs.short_sha }}
+    steps:
+      - name: Compute image version
+        id: version
+        shell: bash
+        run: |
+          short_sha="${GITHUB_SHA::12}"
+          light_tag="$(echo "${GITHUB_REF_NAME}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9_.-]/-/g')"
+
+          echo "image_owner=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
+          echo "image_tag=sha-${short_sha}" >> "$GITHUB_OUTPUT"
+          echo "light_tag=${light_tag}" >> "$GITHUB_OUTPUT"
+          echo "short_sha=${short_sha}" >> "$GITHUB_OUTPUT"
+
   web:
     name: Web checks
     runs-on: ubuntu-latest
@@ -139,24 +162,89 @@ jobs:
         working-directory: apps/api
         run: uv run --python .venv/bin/python python -m pytest plane/tests/unit/integrations
 
+  images:
+    name: Build and push GHCR images
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    needs:
+      - version
+      - web
+      - api
+    if: >-
+      github.event_name == 'push' ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy == 'true')
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: plane-admin
+            dockerfile: ./apps/admin/Dockerfile.admin
+            context: .
+          - image: plane-backend
+            dockerfile: ./apps/api/Dockerfile.api
+            context: ./apps/api
+          - image: plane-frontend
+            dockerfile: ./apps/web/Dockerfile.web
+            context: .
+          - image: plane-live
+            dockerfile: ./apps/live/Dockerfile.live
+            context: .
+          - image: plane-proxy
+            dockerfile: ./apps/proxy/Dockerfile.ce
+            context: ./apps/proxy
+          - image: plane-space
+            dockerfile: ./apps/space/Dockerfile.space
+            context: .
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: ${{ env.GHCR_REGISTRY }}
+          username: ${{ github.actor }}
+
+      - name: Build and push ${{ matrix.image }}
+        uses: docker/build-push-action@v7
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+          platforms: linux/amd64
+          push: true
+          tags: |
+            ${{ env.GHCR_REGISTRY }}/${{ needs.version.outputs.image_owner }}/${{ matrix.image }}:${{ needs.version.outputs.image_tag }}
+            ${{ env.GHCR_REGISTRY }}/${{ needs.version.outputs.image_owner }}/${{ matrix.image }}:${{ needs.version.outputs.light_tag }}
+
   deploy:
     name: Deploy to private server
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs:
-      - web
-      - api
+      - version
+      - images
     if: >-
       (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
       (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy == 'true')
     environment: production
     env:
-      DEPLOY_COMPOSE_FILE: ${{ secrets.DEPLOY_COMPOSE_FILE || 'docker-compose.yml' }}
+      DEPLOY_COMPOSE_FILE: ${{ secrets.DEPLOY_COMPOSE_FILE || 'docker-compose.ghcr.yml' }}
       DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
       DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
       DEPLOY_PORT: ${{ secrets.DEPLOY_PORT || '22' }}
       DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
       DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
+      GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
+      IMAGE_OWNER: ${{ needs.version.outputs.image_owner }}
+      IMAGE_TAG: ${{ needs.version.outputs.image_tag }}
     steps:
       - name: Validate deploy secrets
         run: |
@@ -164,6 +252,8 @@ jobs:
           test -n "$DEPLOY_PATH" || (echo "DEPLOY_PATH is required" && exit 1)
           test -n "$DEPLOY_SSH_KEY" || (echo "DEPLOY_SSH_KEY is required" && exit 1)
           test -n "$DEPLOY_USER" || (echo "DEPLOY_USER is required" && exit 1)
+          test -n "$GHCR_TOKEN" || (echo "GHCR_TOKEN is required for server image pulls" && exit 1)
+          test -n "$GHCR_USERNAME" || (echo "GHCR_USERNAME is required for server image pulls" && exit 1)
 
       - name: Install SSH key
         run: |
@@ -172,16 +262,20 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -p "$DEPLOY_PORT" -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
 
-      - name: Deploy source build
+      - name: Deploy GHCR images
         shell: bash
         run: |
           printf -v remote_path "%q" "$DEPLOY_PATH"
           printf -v remote_ref "%q" "$GITHUB_REF_NAME"
           printf -v remote_sha "%q" "$GITHUB_SHA"
           printf -v remote_compose "%q" "$DEPLOY_COMPOSE_FILE"
+          printf -v remote_ghcr_token "%q" "$GHCR_TOKEN"
+          printf -v remote_ghcr_username "%q" "$GHCR_USERNAME"
+          printf -v remote_image_owner "%q" "$IMAGE_OWNER"
+          printf -v remote_image_tag "%q" "$IMAGE_TAG"
 
           ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
-            "DEPLOY_PATH=$remote_path DEPLOY_REF=$remote_ref DEPLOY_SHA=$remote_sha DEPLOY_COMPOSE_FILE=$remote_compose bash -s" <<'REMOTE'
+            "APP_RELEASE=$remote_image_tag DEPLOY_PATH=$remote_path DEPLOY_REF=$remote_ref DEPLOY_SHA=$remote_sha DEPLOY_COMPOSE_FILE=$remote_compose GHCR_OWNER=$remote_image_owner GHCR_TOKEN=$remote_ghcr_token GHCR_USERNAME=$remote_ghcr_username bash -s" <<'REMOTE'
           set -euo pipefail
 
           cd "$DEPLOY_PATH"
@@ -189,7 +283,8 @@ jobs:
           git checkout "$DEPLOY_REF"
           git reset --hard "$DEPLOY_SHA"
 
-          docker compose -f "$DEPLOY_COMPOSE_FILE" build
+          printf '%s\n' "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USERNAME" --password-stdin
+          docker compose -f "$DEPLOY_COMPOSE_FILE" pull
           docker compose -f "$DEPLOY_COMPOSE_FILE" up -d --remove-orphans
           docker compose -f "$DEPLOY_COMPOSE_FILE" ps
           REMOTE
