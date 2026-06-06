@@ -212,6 +212,8 @@ jobs:
       - name: Build and push ${{ matrix.image }}
         uses: docker/build-push-action@v7
         with:
+          cache-from: type=gha,scope=${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image }}
           context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
           labels: |
