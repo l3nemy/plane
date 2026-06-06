@@ -84,7 +84,10 @@ class TestGitHubIntegration:
                 "total_count": 1,
             }
 
-        monkeypatch.setattr("plane.app.views.integration.github.list_github_installation_repositories", list_repositories)
+        monkeypatch.setattr(
+            "plane.app.views.integration.github.list_github_installation_repositories",
+            list_repositories,
+        )
 
         response = session_client.get(
             f"/api/workspaces/{workspace.slug}/workspace-integrations/{workspace_integration.id}/github-repositories/"
@@ -94,7 +97,9 @@ class TestGitHubIntegration:
         assert response.data["total_count"] == 1
         assert response.data["repositories"][0]["full_name"] == "makeplane/plane"
 
-    def test_installation_webhook_completes_pending_workspace_integration(self, db, settings, session_client, workspace):
+    def test_installation_webhook_completes_pending_workspace_integration(
+        self, db, settings, session_client, workspace
+    ):
         settings.GITHUB_WEBHOOK_SECRET = ""
         Integration.objects.create(provider="github", title="GitHub")
 
@@ -165,7 +170,9 @@ class TestGitHubIntegration:
 
         assert response.status_code == 201
         assert response.data["repo_detail"]["full_name"] == "makeplane/plane"
-        assert GithubRepositorySync.objects.filter(project=project, workspace_integration=workspace_integration).exists()
+        assert GithubRepositorySync.objects.filter(
+            project=project, workspace_integration=workspace_integration
+        ).exists()
 
         list_response = session_client.get(
             f"/api/workspaces/{workspace.slug}/projects/{project.id}/workspace-integrations/"

@@ -114,7 +114,8 @@ def serialize_github_pull_request_development_link(issue_link, project_id):
         "merged": metadata.get("merged"),
         "actor": serialize_github_development_actor(metadata.get("github_actor"), project_id),
         "assignees": [
-            serialize_github_development_actor(assignee, project_id) for assignee in metadata.get("github_assignees") or []
+            serialize_github_development_actor(assignee, project_id)
+            for assignee in metadata.get("github_assignees") or []
         ],
         "created_at": serialize_datetime(issue_link.created_at),
         "updated_at": serialize_datetime(issue_link.updated_at),
