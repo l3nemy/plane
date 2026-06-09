@@ -109,7 +109,7 @@ export function IntegrationCard({ integration }: Props) {
               integration={integration}
               value={
                 syncedGithubRepository && syncedGithubRepository.length > 0
-                  ? `${syncedGithubRepository[0].repo_detail.owner}/${syncedGithubRepository[0].repo_detail.name}`
+                  ? String(syncedGithubRepository[0].repo_detail.repository_id)
                   : null
               }
               label={

@@ -143,6 +143,88 @@ class TestGitHubIntegration:
         assert pending_workspace_integration.metadata["installation_id"] == 12345
         assert pending_workspace_integration.config["installation_id"] == 12345
 
+    def test_reinstall_marks_existing_workspace_integration_pending(
+        self, db, settings, session_client, workspace
+    ):
+        settings.GITHUB_WEBHOOK_SECRET = ""
+        integration = Integration.objects.create(provider="github", title="GitHub")
+        workspace_integration = create_or_update_github_workspace_integration(
+            workspace=workspace,
+            integration=integration,
+            installation_id=12345,
+            installation={
+                "account": {"login": "makeplane"},
+                "repository_selection": "selected",
+            },
+        )
+
+        pending_response = session_client.post(
+            f"/api/workspaces/{workspace.slug}/workspace-integrations/github/",
+            {},
+            format="json",
+        )
+
+        assert pending_response.status_code == 202
+        workspace_integration.refresh_from_db()
+        assert workspace_integration.metadata["pending_install"] is True
+        assert workspace_integration.metadata["previous_installation_id"] == 12345
+        assert "installation_id" not in workspace_integration.metadata
+        assert "installation_id" not in workspace_integration.config
+
+        webhook_response = session_client.post(
+            "/api/integrations/github/webhook",
+            {
+                "action": "created",
+                "installation": {
+                    "id": 67890,
+                    "account": {
+                        "id": 10,
+                        "login": "makeplane",
+                        "type": "Organization",
+                    },
+                    "repository_selection": "all",
+                },
+            },
+            format="json",
+            HTTP_X_GITHUB_EVENT="installation",
+        )
+
+        assert webhook_response.status_code == 202
+        workspace_integration.refresh_from_db()
+        assert workspace_integration.metadata["pending_install"] is False
+        assert workspace_integration.metadata["installation_id"] == 67890
+        assert workspace_integration.metadata["repository_selection"] == "all"
+        assert workspace_integration.config["installation_id"] == 67890
+
+    def test_installation_deleted_webhook_matches_config_installation_id(
+        self, db, settings, session_client, workspace
+    ):
+        settings.GITHUB_WEBHOOK_SECRET = ""
+        integration = Integration.objects.create(provider="github", title="GitHub")
+        workspace_integration = create_or_update_github_workspace_integration(
+            workspace=workspace,
+            integration=integration,
+            installation_id=12345,
+            installation={"account": {"login": "makeplane"}},
+        )
+        workspace_integration.metadata = {}
+        workspace_integration.save(update_fields=["metadata", "updated_at"])
+
+        webhook_response = session_client.post(
+            "/api/integrations/github/webhook",
+            {
+                "action": "deleted",
+                "installation": {
+                    "id": 12345,
+                },
+            },
+            format="json",
+            HTTP_X_GITHUB_EVENT="installation",
+        )
+
+        assert webhook_response.status_code == 202
+        assert not WorkspaceIntegration.objects.filter(id=workspace_integration.id).exists()
+
     def test_project_repository_sync_endpoint(self, db, session_client, create_user, workspace):
         integration = Integration.objects.create(provider="github", title="GitHub")
         workspace_integration = create_or_update_github_workspace_integration(

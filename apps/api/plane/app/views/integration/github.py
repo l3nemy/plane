@@ -847,16 +847,30 @@ def create_pending_github_workspace_integration(
         },
     )
 
-    if created or get_github_installation_id(workspace_integration):
+    if created:
         return workspace_integration
 
     workspace_integration.actor = bot_user
     workspace_integration.api_token = api_token
+    metadata = dict(workspace_integration.metadata or {})
+    previous_installation_id = metadata.pop("installation_id", None) or (workspace_integration.config or {}).get(
+        "installation_id"
+    )
+    metadata.pop("account", None)
+    metadata.pop("repository_selection", None)
+    metadata.pop("permissions", None)
+    metadata.pop("events", None)
+    metadata.pop("suspended", None)
+    if previous_installation_id:
+        metadata["previous_installation_id"] = previous_installation_id
     workspace_integration.metadata = {
-        **(workspace_integration.metadata or {}),
+        **metadata,
         "pending_install": True,
     }
-    workspace_integration.save(update_fields=["actor", "api_token", "metadata", "updated_at"])
+    config = dict(workspace_integration.config or {})
+    config.pop("installation_id", None)
+    workspace_integration.config = config
+    workspace_integration.save(update_fields=["actor", "api_token", "metadata", "config", "updated_at"])
     return workspace_integration
 
 
@@ -1092,8 +1106,6 @@ class GitHubWebhookEndpoint(BaseAPIView):
                 workspace_integrations = WorkspaceIntegration.objects.filter(
                     integration=integration,
                     metadata__pending_install=True,
-                ).filter(
-                    Q(metadata__installation_id__isnull=True) | Q(config__installation_id__isnull=True)
                 ).order_by("-updated_at")[:1]
 
             for workspace_integration in workspace_integrations:
@@ -1106,12 +1118,13 @@ class GitHubWebhookEndpoint(BaseAPIView):
         elif installation_id and event == "installation" and action == "deleted":
             WorkspaceIntegration.objects.filter(
                 integration__provider="github",
-                metadata__installation_id=installation_id,
+            ).filter(
+                Q(metadata__installation_id=installation_id) | Q(config__installation_id=installation_id)
             ).delete()
         elif installation_id and event == "installation" and action in ["suspend", "unsuspend"]:
             workspace_integrations = WorkspaceIntegration.objects.filter(
+                Q(metadata__installation_id=installation_id) | Q(config__installation_id=installation_id),
                 integration__provider="github",
-                metadata__installation_id=installation_id,
             )
             for workspace_integration in workspace_integrations:
                 workspace_integration.metadata = {
