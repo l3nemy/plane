@@ -26,7 +26,33 @@ from plane.license.models import InstanceConfiguration
 from plane.license.api.serializers import InstanceConfigurationSerializer
 from plane.license.utils.encryption import encrypt_data
 from plane.utils.cache import cache_response, invalidate_cache
+from plane.utils.instance_config_variables import instance_config_variables
 from plane.license.utils.instance_value import get_email_configuration
+
+
+AUTHENTICATION_ENABLE_CONFIGS = {
+    "IS_GOOGLE_ENABLED": {
+        "category": "AUTHENTICATION",
+        "is_encrypted": False,
+    },
+    "IS_GITHUB_ENABLED": {
+        "category": "AUTHENTICATION",
+        "is_encrypted": False,
+    },
+    "IS_GITLAB_ENABLED": {
+        "category": "AUTHENTICATION",
+        "is_encrypted": False,
+    },
+    "IS_GITEA_ENABLED": {
+        "category": "GITEA",
+        "is_encrypted": False,
+    },
+}
+
+CONFIGURATION_DEFINITIONS = {
+    item.get("key"): item for item in instance_config_variables if item.get("key")
+}
+CONFIGURATION_DEFINITIONS.update(AUTHENTICATION_ENABLE_CONFIGS)
 
 
 class InstanceConfigurationEndpoint(BaseAPIView):
@@ -41,21 +67,50 @@ class InstanceConfigurationEndpoint(BaseAPIView):
     @invalidate_cache(path="/api/instances/configurations/", user=False)
     @invalidate_cache(path="/api/instances/", user=False)
     def patch(self, request):
-        configurations = InstanceConfiguration.objects.filter(key__in=request.data.keys())
+        configurations = {
+            configuration.key: configuration
+            for configuration in InstanceConfiguration.objects.filter(key__in=request.data.keys())
+        }
 
-        bulk_configurations = []
-        for configuration in configurations:
+        bulk_create_configurations = []
+        bulk_update_configurations = []
+        updated_configurations = []
+
+        for key in request.data.keys():
+            configuration = configurations.get(key)
+            if configuration is None:
+                definition = CONFIGURATION_DEFINITIONS.get(key)
+                if definition is None:
+                    continue
+                configuration = InstanceConfiguration(
+                    key=key,
+                    category=definition.get("category"),
+                    is_encrypted=definition.get("is_encrypted", False),
+                )
+
             raw_value = request.data.get(configuration.key, configuration.value)
             value = "" if raw_value is None else str(raw_value).strip()
             if configuration.is_encrypted:
                 configuration.value = encrypt_data(value)
             else:
                 configuration.value = value
-            bulk_configurations.append(configuration)
 
-        InstanceConfiguration.objects.bulk_update(bulk_configurations, ["value"], batch_size=100)
+            if configuration.id:
+                bulk_update_configurations.append(configuration)
+            else:
+                bulk_create_configurations.append(configuration)
+            updated_configurations.append(configuration)
 
-        serializer = InstanceConfigurationSerializer(configurations, many=True)
+        if bulk_create_configurations:
+            InstanceConfiguration.objects.bulk_create(bulk_create_configurations, batch_size=100)
+        if bulk_update_configurations:
+            InstanceConfiguration.objects.bulk_update(bulk_update_configurations, ["value"], batch_size=100)
+
+        updated_configuration_keys = [configuration.key for configuration in updated_configurations]
+        serializer = InstanceConfigurationSerializer(
+            InstanceConfiguration.objects.filter(key__in=updated_configuration_keys),
+            many=True,
+        )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
