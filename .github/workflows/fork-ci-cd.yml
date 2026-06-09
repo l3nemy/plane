@@ -224,6 +224,7 @@ jobs:
           tags: |
             ${{ env.GHCR_REGISTRY }}/${{ needs.version.outputs.image_owner }}/${{ matrix.image }}:${{ needs.version.outputs.image_tag }}
             ${{ env.GHCR_REGISTRY }}/${{ needs.version.outputs.image_owner }}/${{ matrix.image }}:${{ needs.version.outputs.light_tag }}
+            ${{ env.GHCR_REGISTRY }}/${{ needs.version.outputs.image_owner }}/${{ matrix.image }}:latest
 
   deploy:
     name: Deploy to private server
