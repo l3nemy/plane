@@ -796,21 +796,22 @@ def create_or_update_github_workspace_integration(
         "events": installation.get("events") or [],
     }
 
-    workspace_integration, created = WorkspaceIntegration.objects.get_or_create(
+    workspace_integration = WorkspaceIntegration.all_objects.filter(
         workspace=workspace,
         integration=integration,
-        defaults={
-            "actor": bot_user,
-            "api_token": api_token,
-            "metadata": metadata,
-            "config": {
+    ).first()
+
+    if workspace_integration is None:
+        return WorkspaceIntegration.objects.create(
+            workspace=workspace,
+            integration=integration,
+            actor=bot_user,
+            api_token=api_token,
+            metadata=metadata,
+            config={
                 "installation_id": installation_id,
             },
-        },
-    )
-
-    if created:
-        return workspace_integration
+        )
 
     workspace_integration.actor = bot_user
     workspace_integration.api_token = api_token
@@ -823,7 +824,8 @@ def create_or_update_github_workspace_integration(
         **(workspace_integration.config or {}),
         "installation_id": installation_id,
     }
-    workspace_integration.save(update_fields=["actor", "api_token", "metadata", "config", "updated_at"])
+    workspace_integration.deleted_at = None
+    workspace_integration.save(update_fields=["actor", "api_token", "metadata", "config", "deleted_at", "updated_at"])
     return workspace_integration
 
 
@@ -834,21 +836,22 @@ def create_pending_github_workspace_integration(
 ) -> WorkspaceIntegration:
     bot_user = get_github_bot_user(workspace)
     api_token = get_github_bot_token(workspace, bot_user)
-    workspace_integration, created = WorkspaceIntegration.objects.get_or_create(
+    workspace_integration = WorkspaceIntegration.all_objects.filter(
         workspace=workspace,
         integration=integration,
-        defaults={
-            "actor": bot_user,
-            "api_token": api_token,
-            "metadata": {
+    ).first()
+
+    if workspace_integration is None:
+        return WorkspaceIntegration.objects.create(
+            workspace=workspace,
+            integration=integration,
+            actor=bot_user,
+            api_token=api_token,
+            metadata={
                 "pending_install": True,
             },
-            "config": {},
-        },
-    )
-
-    if created:
-        return workspace_integration
+            config={},
+        )
 
     workspace_integration.actor = bot_user
     workspace_integration.api_token = api_token
@@ -870,7 +873,8 @@ def create_pending_github_workspace_integration(
     config = dict(workspace_integration.config or {})
     config.pop("installation_id", None)
     workspace_integration.config = config
-    workspace_integration.save(update_fields=["actor", "api_token", "metadata", "config", "updated_at"])
+    workspace_integration.deleted_at = None
+    workspace_integration.save(update_fields=["actor", "api_token", "metadata", "config", "deleted_at", "updated_at"])
     return workspace_integration
 
 

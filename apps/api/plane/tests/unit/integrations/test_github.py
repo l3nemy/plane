@@ -4,6 +4,8 @@
 
 import pytest
 
+from django.utils import timezone
+
 from plane.app.integrations.github import verify_github_webhook_signature
 from plane.app.views.integration.github import create_or_update_github_workspace_integration
 from plane.db.models import (
@@ -191,6 +193,90 @@ class TestGitHubIntegration:
 
         assert webhook_response.status_code == 202
         workspace_integration.refresh_from_db()
+        assert workspace_integration.metadata["pending_install"] is False
+        assert workspace_integration.metadata["installation_id"] == 67890
+        assert workspace_integration.metadata["repository_selection"] == "all"
+        assert workspace_integration.config["installation_id"] == 67890
+
+    def test_pending_install_restores_soft_deleted_workspace_integration(
+        self, db, session_client, workspace
+    ):
+        integration = Integration.objects.create(provider="github", title="GitHub")
+        workspace_integration = create_or_update_github_workspace_integration(
+            workspace=workspace,
+            integration=integration,
+            installation_id=12345,
+            installation={
+                "account": {"login": "makeplane"},
+                "repository_selection": "selected",
+            },
+        )
+        workspace_integration.deleted_at = timezone.now()
+        workspace_integration.save(update_fields=["deleted_at", "updated_at"])
+
+        pending_response = session_client.post(
+            f"/api/workspaces/{workspace.slug}/workspace-integrations/github/",
+            {},
+            format="json",
+        )
+
+        assert pending_response.status_code == 202
+        assert WorkspaceIntegration.objects.count() == 1
+        workspace_integration.refresh_from_db()
+        assert workspace_integration.deleted_at is None
+        assert workspace_integration.metadata["pending_install"] is True
+        assert workspace_integration.metadata["previous_installation_id"] == 12345
+        assert "installation_id" not in workspace_integration.config
+
+    def test_install_callback_restores_pending_workspace_integration(
+        self, db, session_client, workspace, monkeypatch
+    ):
+        integration = Integration.objects.create(provider="github", title="GitHub")
+        workspace_integration = create_or_update_github_workspace_integration(
+            workspace=workspace,
+            integration=integration,
+            installation_id=12345,
+            installation={"account": {"login": "makeplane"}},
+        )
+        workspace_integration.deleted_at = timezone.now()
+        workspace_integration.save(update_fields=["deleted_at", "updated_at"])
+
+        pending_response = session_client.post(
+            f"/api/workspaces/{workspace.slug}/workspace-integrations/github/",
+            {},
+            format="json",
+        )
+        assert pending_response.status_code == 202
+
+        def get_installation(installation_id):
+            return {
+                "id": installation_id,
+                "account": {
+                    "id": 10,
+                    "login": "makeplane",
+                    "type": "Organization",
+                    "html_url": "https://github.com/makeplane",
+                },
+                "repository_selection": "all",
+            }
+
+        monkeypatch.setattr(
+            "plane.app.views.integration.github.get_github_installation",
+            get_installation,
+        )
+
+        callback_response = session_client.get(
+            "/api/integrations/github/callback/",
+            {
+                "state": workspace.slug,
+                "installation_id": 67890,
+                "setup_action": "install",
+            },
+        )
+
+        assert callback_response.status_code == 200
+        workspace_integration.refresh_from_db()
+        assert workspace_integration.deleted_at is None
         assert workspace_integration.metadata["pending_install"] is False
         assert workspace_integration.metadata["installation_id"] == 67890
         assert workspace_integration.metadata["repository_selection"] == "all"
