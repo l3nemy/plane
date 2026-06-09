@@ -1,166 +1,64 @@
-name: Fork CI/CD
+name: Fork Deploy
 
 on:
-  pull_request:
+  workflow_run:
+    workflows:
+      - Fork CI
     branches:
       - main
-  push:
-    branches:
-      - main
+    types:
+      - completed
   workflow_dispatch:
-    inputs:
-      deploy:
-        description: Deploy this ref after CI
-        required: true
-        default: "false"
-        type: choice
-        options:
-          - "false"
-          - "true"
 
 permissions:
   contents: read
   packages: write
 
 concurrency:
-  group: fork-ci-cd-${{ github.ref }}
-  cancel-in-progress: true
+  group: fork-deploy-production
+  cancel-in-progress: false
 
 env:
   GHCR_REGISTRY: ghcr.io
-  NODE_VERSION: "22.18.0"
-  PNPM_VERSION: "10.32.1"
-  PYTHON_VERSION: "3.12"
 
 jobs:
   version:
     name: Version
     runs-on: ubuntu-latest
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
     outputs:
       image_owner: ${{ steps.version.outputs.image_owner }}
       image_tag: ${{ steps.version.outputs.image_tag }}
       light_tag: ${{ steps.version.outputs.light_tag }}
-      short_sha: ${{ steps.version.outputs.short_sha }}
+      source_ref: ${{ steps.version.outputs.source_ref }}
+      source_sha: ${{ steps.version.outputs.source_sha }}
     steps:
-      - name: Compute image version
+      - name: Compute deploy version
         id: version
         shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          WORKFLOW_RUN_HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}
+          WORKFLOW_RUN_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          short_sha="${GITHUB_SHA::12}"
-          light_tag="$(echo "${GITHUB_REF_NAME}" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9_.-]/-/g')"
+          if [ "$EVENT_NAME" = "workflow_run" ]; then
+            source_ref="$WORKFLOW_RUN_HEAD_BRANCH"
+            source_sha="$WORKFLOW_RUN_HEAD_SHA"
+          else
+            source_ref="$GITHUB_REF_NAME"
+            source_sha="$GITHUB_SHA"
+          fi
+
+          short_sha="${source_sha::12}"
+          light_tag="$(echo "$source_ref" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9_.-]/-/g')"
 
           echo "image_owner=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
           echo "image_tag=sha-${short_sha}" >> "$GITHUB_OUTPUT"
           echo "light_tag=${light_tag}" >> "$GITHUB_OUTPUT"
-          echo "short_sha=${short_sha}" >> "$GITHUB_OUTPUT"
-
-  web:
-    name: Web checks
-    runs-on: ubuntu-latest
-    timeout-minutes: 35
-    env:
-      NODE_OPTIONS: "--max-old-space-size=4096"
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-        with:
-          fetch-depth: 50
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: Enable pnpm
-        run: |
-          corepack enable
-          corepack prepare pnpm@${{ env.PNPM_VERSION }} --activate
-
-      - name: Get pnpm store path
-        shell: bash
-        run: echo "PNPM_STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
-
-      - name: Restore pnpm cache
-        uses: actions/cache@v5
-        with:
-          path: ${{ env.PNPM_STORE_PATH }}
-          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
-          restore-keys: |
-            pnpm-store-${{ runner.os }}-
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Check formatting
-        run: pnpm check:format
-
-      - name: Check lint
-        run: pnpm check:lint
-
-      - name: Build packages and apps
-        run: pnpm build
-
-      - name: Check types
-        run: pnpm check:types
-
-  api:
-    name: API checks
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    services:
-      postgres:
-        image: postgres:15.7-alpine
-        env:
-          POSTGRES_DB: plane
-          POSTGRES_PASSWORD: plane
-          POSTGRES_USER: plane
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U plane -d plane"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-      redis:
-        image: valkey/valkey:7.2.11-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "valkey-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-    env:
-      DATABASE_URL: postgresql://plane:plane@localhost:5432/plane
-      REDIS_URL: redis://localhost:6379/0
-      SECRET_KEY: fork-ci-secret-key
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Set up uv
-        uses: astral-sh/setup-uv@v6
-        with:
-          enable-cache: true
-
-      - name: Install API test dependencies
-        working-directory: apps/api
-        run: |
-          uv venv
-          uv pip install -r requirements/test.txt ruff==0.9.7
-
-      - name: Lint API
-        working-directory: apps/api
-        run: uv run --python .venv/bin/python ruff check .
-
-      - name: Run API integration unit tests
-        working-directory: apps/api
-        run: uv run --python .venv/bin/python python -m pytest plane/tests/unit/integrations
+          echo "source_ref=${source_ref}" >> "$GITHUB_OUTPUT"
+          echo "source_sha=${source_sha}" >> "$GITHUB_OUTPUT"
 
   images:
     name: Build and push GHCR images
@@ -168,11 +66,6 @@ jobs:
     timeout-minutes: 60
     needs:
       - version
-      - web
-      - api
-    if: >-
-      github.event_name == 'push' ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy == 'true')
     strategy:
       fail-fast: false
       matrix:
@@ -198,6 +91,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          ref: ${{ needs.version.outputs.source_sha }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -217,7 +112,7 @@ jobs:
           context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
           labels: |
-            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.revision=${{ needs.version.outputs.source_sha }}
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
           platforms: linux/amd64
           push: true
@@ -233,9 +128,6 @@ jobs:
     needs:
       - version
       - images
-    if: >-
-      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.deploy == 'true')
     environment: production
     env:
       DEPLOY_COMPOSE_FILE: ${{ secrets.DEPLOY_COMPOSE_FILE || 'docker-compose.ghcr.yml' }}
@@ -248,6 +140,8 @@ jobs:
       GHCR_USERNAME: ${{ secrets.GHCR_USERNAME }}
       IMAGE_OWNER: ${{ needs.version.outputs.image_owner }}
       IMAGE_TAG: ${{ needs.version.outputs.image_tag }}
+      SOURCE_REF: ${{ needs.version.outputs.source_ref }}
+      SOURCE_SHA: ${{ needs.version.outputs.source_sha }}
     steps:
       - name: Validate deploy secrets
         run: |
@@ -269,8 +163,8 @@ jobs:
         shell: bash
         run: |
           printf -v remote_path "%q" "$DEPLOY_PATH"
-          printf -v remote_ref "%q" "$GITHUB_REF_NAME"
-          printf -v remote_sha "%q" "$GITHUB_SHA"
+          printf -v remote_ref "%q" "$SOURCE_REF"
+          printf -v remote_sha "%q" "$SOURCE_SHA"
           printf -v remote_compose "%q" "$DEPLOY_COMPOSE_FILE"
           printf -v remote_ghcr_token "%q" "$GHCR_TOKEN"
           printf -v remote_ghcr_username "%q" "$GHCR_USERNAME"

@@ -1,0 +1,131 @@
+name: Fork CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fork-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22.18.0"
+  PNPM_VERSION: "10.32.1"
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  web:
+    name: Web checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      NODE_OPTIONS: "--max-old-space-size=4096"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 50
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Enable pnpm
+        run: |
+          corepack enable
+          corepack prepare pnpm@${{ env.PNPM_VERSION }} --activate
+
+      - name: Get pnpm store path
+        shell: bash
+        run: echo "PNPM_STORE_PATH=$(pnpm store path --silent)" >> "$GITHUB_ENV"
+
+      - name: Restore pnpm cache
+        uses: actions/cache@v5
+        with:
+          path: ${{ env.PNPM_STORE_PATH }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-${{ runner.os }}-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check formatting
+        run: pnpm check:format
+
+      - name: Check lint
+        run: pnpm check:lint
+
+      - name: Build packages and apps
+        run: pnpm build
+
+      - name: Check types
+        run: pnpm check:types
+
+  api:
+    name: API checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    services:
+      postgres:
+        image: postgres:15.7-alpine
+        env:
+          POSTGRES_DB: plane
+          POSTGRES_PASSWORD: plane
+          POSTGRES_USER: plane
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U plane -d plane"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: valkey/valkey:7.2.11-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "valkey-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://plane:plane@localhost:5432/plane
+      REDIS_URL: redis://localhost:6379/0
+      SECRET_KEY: fork-ci-secret-key
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install API test dependencies
+        working-directory: apps/api
+        run: |
+          uv venv
+          uv pip install -r requirements/test.txt ruff==0.9.7
+
+      - name: Lint API
+        working-directory: apps/api
+        run: uv run --python .venv/bin/python ruff check .
+
+      - name: Run API integration unit tests
+        working-directory: apps/api
+        run: uv run --python .venv/bin/python python -m pytest plane/tests/unit/integrations
